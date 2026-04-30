@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.example.nestore_15.R
+import com.example.nestore_15.debug.DebugLogger
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.viewmodel.LoginError
 import com.example.nestore_15.viewmodel.LoginUiState
@@ -63,8 +64,33 @@ class LoginActivity : AppCompatActivity() {
 
         registerBtn.setOnClickListener {
             try {
+                // #region agent log
+                DebugLogger.log(
+                    runId = "pre-fix",
+                    hypothesisId = "H1",
+                    location = "LoginActivity.kt:67",
+                    message = "Register button tapped, starting RegisterActivity"
+                )
+                // #endregion
                 startActivity(Intent(this, RegisterActivity::class.java))
+                // #region agent log
+                DebugLogger.log(
+                    runId = "pre-fix",
+                    hypothesisId = "H1",
+                    location = "LoginActivity.kt:75",
+                    message = "startActivity returned without throwing"
+                )
+                // #endregion
             } catch (e: Exception) {
+                // #region agent log
+                DebugLogger.log(
+                    runId = "pre-fix",
+                    hypothesisId = "H1",
+                    location = "LoginActivity.kt:83",
+                    message = "Exception while opening RegisterActivity",
+                    data = mapOf("error" to (e.message ?: "unknown"))
+                )
+                // #endregion
                 android.util.Log.e("NESTORA_DEBUG", "Transition failed: ${e.message}")
                 Toast.makeText(this, "Navigation Error", Toast.LENGTH_SHORT).show()
             }

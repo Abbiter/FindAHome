@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.example.nestore_15.R
+import com.example.nestore_15.debug.DebugLogger
 import com.example.nestore_15.data.model.RegistrationRole
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.viewmodel.RegisterFieldErrors
@@ -30,7 +31,23 @@ class RegisterActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // #region agent log
+        DebugLogger.log(
+            runId = "pre-fix",
+            hypothesisId = "H2",
+            location = "RegisterActivity.kt:34",
+            message = "RegisterActivity onCreate entered"
+        )
+        // #endregion
         setContentView(R.layout.registration)
+        // #region agent log
+        DebugLogger.log(
+            runId = "pre-fix",
+            hypothesisId = "H2",
+            location = "RegisterActivity.kt:42",
+            message = "registration layout inflated"
+        )
+        // #endregion
 
         btnStudent = findViewById(R.id.btnStudent)
         btnProvider = findViewById(R.id.btnProvider)
@@ -38,8 +55,25 @@ class RegisterActivity : AppCompatActivity() {
         emailInput = findViewById(R.id.emailInput)
         passwordInput = findViewById(R.id.passwordInput)
         createAccountBtn = findViewById(R.id.createAccountBtn)
+        // #region agent log
+        DebugLogger.log(
+            runId = "pre-fix",
+            hypothesisId = "H2",
+            location = "RegisterActivity.kt:56",
+            message = "View binding completed for registration screen"
+        )
+        // #endregion
 
         viewModel.selectedRole.observe(this) { role ->
+            // #region agent log
+            DebugLogger.log(
+                runId = "pre-fix",
+                hypothesisId = "H3",
+                location = "RegisterActivity.kt:64",
+                message = "selectedRole observer fired",
+                data = mapOf("role" to role.name)
+            )
+            // #endregion
             updateRoleToggleUi(role)
         }
 
@@ -72,6 +106,15 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun updateRoleToggleUi(role: RegistrationRole) {
+        // #region agent log
+        DebugLogger.log(
+            runId = "pre-fix",
+            hypothesisId = "H3",
+            location = "RegisterActivity.kt:96",
+            message = "updateRoleToggleUi entered",
+            data = mapOf("role" to role.name)
+        )
+        // #endregion
         when (role) {
             RegistrationRole.STUDENT -> {
                 btnStudent.setBackgroundResource(R.drawable.btn_primary_gradient)
@@ -86,6 +129,15 @@ class RegisterActivity : AppCompatActivity() {
                 btnStudent.setTextColor(getColor(R.color.deep_royal_text))
             }
         }
+        // #region agent log
+        DebugLogger.log(
+            runId = "pre-fix",
+            hypothesisId = "H3",
+            location = "RegisterActivity.kt:117",
+            message = "updateRoleToggleUi completed",
+            data = mapOf("role" to role.name)
+        )
+        // #endregion
     }
 
     private fun clearFieldErrors() {
