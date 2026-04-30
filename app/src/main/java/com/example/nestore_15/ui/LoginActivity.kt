@@ -9,6 +9,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.nestore_15.R
+import com.example.nestore_15.debug.DebugLogger
 import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.viewmodel.LoginError
@@ -45,6 +46,14 @@ class LoginActivity : AppCompatActivity() {
                 LoginUiState.Idle -> Unit
                 LoginUiState.Loading -> Unit
                 LoginUiState.Success -> {
+                    // #region agent log
+                    DebugLogger.log(
+                        runId = "pre-fix",
+                        hypothesisId = "H1",
+                        location = "LoginActivity.kt:49",
+                        message = "Login success observer reached"
+                    )
+                    // #endregion
                     Toast.makeText(this, "Welcome to Find A Home!", Toast.LENGTH_SHORT).show()
                     viewModel.acknowledgeState()
                     lifecycleScope.launch {
@@ -53,7 +62,24 @@ class LoginActivity : AppCompatActivity() {
                             UserRole.STUDENT -> HomeActivity::class.java
                             UserRole.PROVIDER -> ProviderHomeActivity::class.java
                         }
+                        // #region agent log
+                        DebugLogger.log(
+                            runId = "pre-fix",
+                            hypothesisId = "H2",
+                            location = "LoginActivity.kt:66",
+                            message = "Resolved role and destination after login",
+                            data = mapOf("role" to role.name, "destination" to destination.simpleName)
+                        )
+                        // #endregion
                         startActivity(Intent(this@LoginActivity, destination))
+                        // #region agent log
+                        DebugLogger.log(
+                            runId = "pre-fix",
+                            hypothesisId = "H2",
+                            location = "LoginActivity.kt:74",
+                            message = "startActivity invoked from LoginActivity"
+                        )
+                        // #endregion
                         finish()
                     }
                 }
