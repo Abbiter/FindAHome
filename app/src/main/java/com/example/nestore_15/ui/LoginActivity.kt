@@ -42,6 +42,14 @@ class LoginActivity : AppCompatActivity() {
                 LoginUiState.Idle -> Unit
                 LoginUiState.Loading -> Unit
                 LoginUiState.Success -> {
+                    // #region agent log
+                    DebugLogger.log(
+                        runId = "pre-fix",
+                        hypothesisId = "H2",
+                        location = "LoginActivity.kt:46",
+                        message = "Login success observed, about to navigate HomeActivity"
+                    )
+                    // #endregion
                     Toast.makeText(this, "Welcome to Find A Home!", Toast.LENGTH_SHORT).show()
                     viewModel.acknowledgeState()
                     startActivity(Intent(this, HomeActivity::class.java))
@@ -64,33 +72,8 @@ class LoginActivity : AppCompatActivity() {
 
         registerBtn.setOnClickListener {
             try {
-                // #region agent log
-                DebugLogger.log(
-                    runId = "pre-fix",
-                    hypothesisId = "H1",
-                    location = "LoginActivity.kt:67",
-                    message = "Register button tapped, starting RegisterActivity"
-                )
-                // #endregion
                 startActivity(Intent(this, RegisterActivity::class.java))
-                // #region agent log
-                DebugLogger.log(
-                    runId = "pre-fix",
-                    hypothesisId = "H1",
-                    location = "LoginActivity.kt:75",
-                    message = "startActivity returned without throwing"
-                )
-                // #endregion
             } catch (e: Exception) {
-                // #region agent log
-                DebugLogger.log(
-                    runId = "pre-fix",
-                    hypothesisId = "H1",
-                    location = "LoginActivity.kt:83",
-                    message = "Exception while opening RegisterActivity",
-                    data = mapOf("error" to (e.message ?: "unknown"))
-                )
-                // #endregion
                 android.util.Log.e("NESTORA_DEBUG", "Transition failed: ${e.message}")
                 Toast.makeText(this, "Navigation Error", Toast.LENGTH_SHORT).show()
             }

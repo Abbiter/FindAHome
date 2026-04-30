@@ -20,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.nestore_15.R
+import com.example.nestore_15.debug.DebugLogger
 import com.example.nestore_15.data.preferences.ListingFilterPreferencesStore
 import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.session.SessionManager
@@ -52,7 +53,23 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // #region agent log
+        DebugLogger.log(
+            runId = "pre-fix",
+            hypothesisId = "H1",
+            location = "HomeActivity.kt:56",
+            message = "HomeActivity onCreate entered before setContentView"
+        )
+        // #endregion
         setContentView(R.layout.home)
+        // #region agent log
+        DebugLogger.log(
+            runId = "pre-fix",
+            hypothesisId = "H1",
+            location = "HomeActivity.kt:64",
+            message = "Home layout inflated successfully"
+        )
+        // #endregion
 
         val drawerLayout = findViewById<DrawerLayout>(R.id.drawerLayout)
         val navigationView = findViewById<NavigationView>(R.id.navView)

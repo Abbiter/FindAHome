@@ -31,23 +31,7 @@ class RegisterActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // #region agent log
-        DebugLogger.log(
-            runId = "pre-fix",
-            hypothesisId = "H2",
-            location = "RegisterActivity.kt:34",
-            message = "RegisterActivity onCreate entered"
-        )
-        // #endregion
         setContentView(R.layout.registration)
-        // #region agent log
-        DebugLogger.log(
-            runId = "pre-fix",
-            hypothesisId = "H2",
-            location = "RegisterActivity.kt:42",
-            message = "registration layout inflated"
-        )
-        // #endregion
 
         btnStudent = findViewById(R.id.btnStudent)
         btnProvider = findViewById(R.id.btnProvider)
@@ -55,25 +39,8 @@ class RegisterActivity : AppCompatActivity() {
         emailInput = findViewById(R.id.emailInput)
         passwordInput = findViewById(R.id.passwordInput)
         createAccountBtn = findViewById(R.id.createAccountBtn)
-        // #region agent log
-        DebugLogger.log(
-            runId = "pre-fix",
-            hypothesisId = "H2",
-            location = "RegisterActivity.kt:56",
-            message = "View binding completed for registration screen"
-        )
-        // #endregion
 
         viewModel.selectedRole.observe(this) { role ->
-            // #region agent log
-            DebugLogger.log(
-                runId = "pre-fix",
-                hypothesisId = "H3",
-                location = "RegisterActivity.kt:64",
-                message = "selectedRole observer fired",
-                data = mapOf("role" to role.name)
-            )
-            // #endregion
             updateRoleToggleUi(role)
         }
 
@@ -81,9 +48,23 @@ class RegisterActivity : AppCompatActivity() {
             when (state) {
                 RegisterUiState.Idle -> Unit
                 RegisterUiState.Success -> {
+                    // #region agent log
+                    DebugLogger.log(
+                        runId = "pre-fix",
+                        hypothesisId = "H4",
+                        location = "RegisterActivity.kt:52",
+                        message = "Registration success state observed, auto-login navigation to Home",
+                        data = mapOf("emailLength" to emailInput.text.toString().trim().length)
+                    )
+                    // #endregion
                     clearFieldErrors()
-                    Toast.makeText(this, "Registration completed successfully", Toast.LENGTH_LONG).show()
                     viewModel.acknowledgeState()
+                    startActivity(
+                        android.content.Intent(this, HomeActivity::class.java).apply {
+                            addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                        }
+                    )
+                    finish()
                 }
                 is RegisterUiState.InvalidInput -> {
                     renderValidationErrors(state.errors)
@@ -106,15 +87,6 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun updateRoleToggleUi(role: RegistrationRole) {
-        // #region agent log
-        DebugLogger.log(
-            runId = "pre-fix",
-            hypothesisId = "H3",
-            location = "RegisterActivity.kt:96",
-            message = "updateRoleToggleUi entered",
-            data = mapOf("role" to role.name)
-        )
-        // #endregion
         when (role) {
             RegistrationRole.STUDENT -> {
                 btnStudent.setBackgroundResource(R.drawable.btn_primary_gradient)
@@ -129,15 +101,6 @@ class RegisterActivity : AppCompatActivity() {
                 btnStudent.setTextColor(getColor(R.color.deep_royal_text))
             }
         }
-        // #region agent log
-        DebugLogger.log(
-            runId = "pre-fix",
-            hypothesisId = "H3",
-            location = "RegisterActivity.kt:117",
-            message = "updateRoleToggleUi completed",
-            data = mapOf("role" to role.name)
-        )
-        // #endregion
     }
 
     private fun clearFieldErrors() {

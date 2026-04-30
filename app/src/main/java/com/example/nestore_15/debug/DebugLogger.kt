@@ -5,7 +5,6 @@ import java.io.File
 
 object DebugLogger {
     private const val LOG_PATH = "debug-640022.log"
-    private const val SESSION_ID = "640022"
 
     fun log(
         runId: String,
@@ -16,7 +15,7 @@ object DebugLogger {
     ) {
         runCatching {
             val payload = JSONObject().apply {
-                put("sessionId", SESSION_ID)
+                put("sessionId", "640022")
                 put("runId", runId)
                 put("hypothesisId", hypothesisId)
                 put("location", location)
