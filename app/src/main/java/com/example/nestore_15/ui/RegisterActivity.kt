@@ -10,13 +10,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.lifecycleScope
 import com.example.nestore_15.R
+import android.content.Intent
 import com.example.nestore_15.data.model.RegistrationRole
 import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.viewmodel.RegisterFieldErrors
 import com.example.nestore_15.viewmodel.RegisterUiState
 import com.example.nestore_15.viewmodel.RegisterViewModel
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class RegisterActivity : AppCompatActivity() {
@@ -52,19 +52,18 @@ class RegisterActivity : AppCompatActivity() {
         viewModel.uiState.observe(this) { state ->
             when (state) {
                 RegisterUiState.Idle -> Unit
-                RegisterUiState.Success -> {
+                is RegisterUiState.Success -> {
                     clearFieldErrors()
                     viewModel.acknowledgeState()
                     lifecycleScope.launch {
-                        val selectedRole = viewModel.selectedRole.value ?: RegistrationRole.STUDENT
-                        val resolvedRole = sessionManager.userRole.first() ?: selectedRole.toUserRole()
-                        val destination = when (resolvedRole) {
+                        val destination = when (state.role) {
                             UserRole.STUDENT -> HomeActivity::class.java
                             UserRole.PROVIDER -> ProviderHomeActivity::class.java
                         }
                         startActivity(
-                            android.content.Intent(this@RegisterActivity, destination).apply {
-                                addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                            Intent(this@RegisterActivity, destination).apply {
+                                putExtra(EXTRA_ROLE_OVERRIDE, state.role.name)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                             }
                         )
                         finish()
@@ -142,5 +141,9 @@ class RegisterActivity : AppCompatActivity() {
             RegistrationRole.STUDENT -> UserRole.STUDENT
             RegistrationRole.HOME_PROVIDER -> UserRole.PROVIDER
         }
+    }
+
+    companion object {
+        const val EXTRA_ROLE_OVERRIDE = "extra_role_override"
     }
 }

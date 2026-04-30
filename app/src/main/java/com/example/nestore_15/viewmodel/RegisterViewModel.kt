@@ -22,7 +22,7 @@ data class RegisterFieldErrors(
 sealed class RegisterUiState {
     data object Idle : RegisterUiState()
     data class InvalidInput(val errors: RegisterFieldErrors) : RegisterUiState()
-    data object Success : RegisterUiState()
+    data class Success(val role: com.example.nestore_15.data.model.UserRole) : RegisterUiState()
 }
 
 class RegisterViewModel(
@@ -63,7 +63,7 @@ class RegisterViewModel(
             authRepository.mockRegister(trimmedPhone, trimmedEmail, trimmedPassword, role).fold(
                 onSuccess = { user ->
                     sessionManager.saveUser(user)
-                    _uiState.value = RegisterUiState.Success
+                    _uiState.value = RegisterUiState.Success(user.role)
                 },
                 onFailure = {
                     _uiState.value = RegisterUiState.Idle

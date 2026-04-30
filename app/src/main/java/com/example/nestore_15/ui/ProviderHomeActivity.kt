@@ -26,7 +26,9 @@ class ProviderHomeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         lifecycleScope.launch {
-            val role = sessionManager.userRole.first()
+            val roleFromIntent = intent.getStringExtra(RegisterActivity.EXTRA_ROLE_OVERRIDE)
+                ?.let { runCatching { UserRole.valueOf(it) }.getOrNull() }
+            val role = sessionManager.userRole.first() ?: roleFromIntent
             // #region agent log
             DebugLogger.log(
                 runId = "pre-fix",
