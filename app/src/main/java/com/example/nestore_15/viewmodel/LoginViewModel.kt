@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 sealed class LoginUiState {
     data object Idle : LoginUiState()
     data object Loading : LoginUiState()
-    data object Success : LoginUiState()
+    data class Success(val role: com.example.nestore_15.data.model.UserRole) : LoginUiState()
     data class Error(val reason: LoginError) : LoginUiState()
 }
 
@@ -43,7 +43,7 @@ class LoginViewModel(
             authRepository.mockLogin(trimmedEmail, trimmedPassword).fold(
                 onSuccess = { user ->
                     sessionManager.saveUser(user)
-                    _uiState.value = LoginUiState.Success
+                    _uiState.value = LoginUiState.Success(user.role)
                 },
                 onFailure = {
                     _uiState.value = LoginUiState.Error(LoginError.INVALID_CREDENTIALS)
