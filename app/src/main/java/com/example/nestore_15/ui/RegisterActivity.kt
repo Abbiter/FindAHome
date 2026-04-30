@@ -7,13 +7,17 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import androidx.lifecycle.lifecycleScope
 import com.example.nestore_15.R
-import com.example.nestore_15.debug.DebugLogger
 import com.example.nestore_15.data.model.RegistrationRole
+import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.viewmodel.RegisterFieldErrors
 import com.example.nestore_15.viewmodel.RegisterUiState
 import com.example.nestore_15.viewmodel.RegisterViewModel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class RegisterActivity : AppCompatActivity() {
 
@@ -32,6 +36,7 @@ class RegisterActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.registration)
+        setupBackNavigation()
 
         btnStudent = findViewById(R.id.btnStudent)
         btnProvider = findViewById(R.id.btnProvider)
@@ -48,23 +53,22 @@ class RegisterActivity : AppCompatActivity() {
             when (state) {
                 RegisterUiState.Idle -> Unit
                 RegisterUiState.Success -> {
-                    // #region agent log
-                    DebugLogger.log(
-                        runId = "pre-fix",
-                        hypothesisId = "H4",
-                        location = "RegisterActivity.kt:52",
-                        message = "Registration success state observed, auto-login navigation to Home",
-                        data = mapOf("emailLength" to emailInput.text.toString().trim().length)
-                    )
-                    // #endregion
                     clearFieldErrors()
                     viewModel.acknowledgeState()
-                    startActivity(
-                        android.content.Intent(this, HomeActivity::class.java).apply {
-                            addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    lifecycleScope.launch {
+                        val selectedRole = viewModel.selectedRole.value ?: RegistrationRole.STUDENT
+                        val resolvedRole = sessionManager.userRole.first() ?: selectedRole.toUserRole()
+                        val destination = when (resolvedRole) {
+                            UserRole.STUDENT -> HomeActivity::class.java
+                            UserRole.PROVIDER -> ProviderHomeActivity::class.java
                         }
-                    )
-                    finish()
+                        startActivity(
+                            android.content.Intent(this@RegisterActivity, destination).apply {
+                                addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                            }
+                        )
+                        finish()
+                    }
                 }
                 is RegisterUiState.InvalidInput -> {
                     renderValidationErrors(state.errors)
@@ -120,6 +124,23 @@ class RegisterActivity : AppCompatActivity() {
             errors.passwordRequired -> "Password is required"
             errors.passwordTooShort -> "Use at least 8 characters"
             else -> null
+        }
+    }
+
+    private fun setupBackNavigation() {
+        val toolbar = findViewById<Toolbar>(R.id.secondaryToolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
+        toolbar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
+    }
+
+    private fun RegistrationRole.toUserRole(): UserRole {
+        return when (this) {
+            RegistrationRole.STUDENT -> UserRole.STUDENT
+            RegistrationRole.HOME_PROVIDER -> UserRole.PROVIDER
         }
     }
 }

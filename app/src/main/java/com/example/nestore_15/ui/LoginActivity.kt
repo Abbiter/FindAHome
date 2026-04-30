@@ -7,12 +7,15 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.example.nestore_15.R
-import com.example.nestore_15.debug.DebugLogger
+import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.viewmodel.LoginError
 import com.example.nestore_15.viewmodel.LoginUiState
 import com.example.nestore_15.viewmodel.LoginViewModel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
 
@@ -42,18 +45,17 @@ class LoginActivity : AppCompatActivity() {
                 LoginUiState.Idle -> Unit
                 LoginUiState.Loading -> Unit
                 LoginUiState.Success -> {
-                    // #region agent log
-                    DebugLogger.log(
-                        runId = "pre-fix",
-                        hypothesisId = "H2",
-                        location = "LoginActivity.kt:46",
-                        message = "Login success observed, about to navigate HomeActivity"
-                    )
-                    // #endregion
                     Toast.makeText(this, "Welcome to Find A Home!", Toast.LENGTH_SHORT).show()
                     viewModel.acknowledgeState()
-                    startActivity(Intent(this, HomeActivity::class.java))
-                    finish()
+                    lifecycleScope.launch {
+                        val role = sessionManager.userRole.first() ?: UserRole.STUDENT
+                        val destination = when (role) {
+                            UserRole.STUDENT -> HomeActivity::class.java
+                            UserRole.PROVIDER -> ProviderHomeActivity::class.java
+                        }
+                        startActivity(Intent(this@LoginActivity, destination))
+                        finish()
+                    }
                 }
                 is LoginUiState.Error -> {
                     val message = when (state.reason) {

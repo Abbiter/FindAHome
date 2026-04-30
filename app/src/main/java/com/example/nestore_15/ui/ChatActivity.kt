@@ -6,6 +6,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -30,6 +31,7 @@ class ChatActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.chat)
+        setupBackNavigation()
 
         currentUserId = intent.getStringExtra(EXTRA_CURRENT_USER_ID).orEmpty()
         val listingId = intent.getStringExtra(EXTRA_LISTING_ID).orEmpty()
@@ -81,6 +83,16 @@ class ChatActivity : AppCompatActivity() {
                     Toast.makeText(this, "Chat connection error", Toast.LENGTH_SHORT).show()
                 }
             }
+        }
+    }
+
+    private fun setupBackNavigation() {
+        val toolbar = findViewById<Toolbar>(R.id.secondaryToolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
+        toolbar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
         }
     }
 

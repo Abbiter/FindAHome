@@ -35,15 +35,25 @@
             android:layout_height="wrap_content"
             android:padding="28dp">
 
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/secondaryToolbar"
+                android:layout_width="0dp"
+                android:layout_height="?attr/actionBarSize"
+                android:background="@android:color/transparent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
             <TextView
                 android:id="@+id/regTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:text="Find A Home"
                 android:textColor="@color/royal_blue"
                 android:textSize="42sp"
                 android:fontFamily="sans-serif-black"
-                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/secondaryToolbar"
                 app:layout_constraintStart_toStartOf="parent" />
 
             <TextView

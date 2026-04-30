@@ -1,6 +1,7 @@
 package com.example.nestore_15.ui
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -11,16 +12,16 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
-import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.nestore_15.R
-import com.example.nestore_15.debug.DebugLogger
+import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.preferences.ListingFilterPreferencesStore
 import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.session.SessionManager
@@ -53,42 +54,47 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // #region agent log
-        DebugLogger.log(
-            runId = "pre-fix",
-            hypothesisId = "H1",
-            location = "HomeActivity.kt:56",
-            message = "HomeActivity onCreate entered before setContentView"
-        )
-        // #endregion
+        lifecycleScope.launch {
+            when (sessionManager.userRole.first()) {
+                UserRole.PROVIDER -> {
+                    startActivity(
+                        Intent(this@HomeActivity, ProviderHomeActivity::class.java).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                        }
+                    )
+                    finish()
+                    return@launch
+                }
+                UserRole.STUDENT -> Unit
+                null -> {
+                    startActivity(
+                        Intent(this@HomeActivity, LoginActivity::class.java).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        }
+                    )
+                    finish()
+                    return@launch
+                }
+            }
+            initializeStudentUi()
+        }
+    }
+
+    private fun initializeStudentUi() {
         setContentView(R.layout.home)
-        // #region agent log
-        DebugLogger.log(
-            runId = "pre-fix",
-            hypothesisId = "H1",
-            location = "HomeActivity.kt:64",
-            message = "Home layout inflated successfully"
-        )
-        // #endregion
 
         val drawerLayout = findViewById<DrawerLayout>(R.id.drawerLayout)
         val navigationView = findViewById<NavigationView>(R.id.navView)
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
 
-        val toggle = ActionBarDrawerToggle(
-            this,
-            drawerLayout,
-            toolbar,
-            R.string.open,
-            R.string.close
-        )
-        drawerLayout.addDrawerListener(toggle)
-        toggle.syncState()
-
         findViewById<ImageView>(R.id.btnMenu).setOnClickListener {
             drawerLayout.openDrawer(GravityCompat.START)
         }
+        findViewById<ImageView>(R.id.btnProfile).setOnClickListener {
+            startActivity(Intent(this, ProfileActivity::class.java))
+        }
+        observeVerificationStatus()
         setupSearchFilter()
 
         recyclerView = findViewById(R.id.propertyRecyclerView)
@@ -287,6 +293,25 @@ class HomeActivity : AppCompatActivity() {
                 true
             } else {
                 false
+            }
+        }
+    }
+
+    private fun observeVerificationStatus() {
+        val statusText = findViewById<TextView>(R.id.tvVerificationStatus)
+        val statusDot = findViewById<View>(R.id.viewVerificationDot)
+
+        lifecycleScope.launch {
+            sessionManager.getCurrentUser().collect { user ->
+                val (label, colorRes) = when {
+                    user == null -> "Not Verified" to R.color.status_not_verified_red
+                    user.isVerified -> "Verified" to R.color.available_green
+                    else -> "Pending" to R.color.status_pending_orange
+                }
+                statusText.text = label
+                val color = ContextCompat.getColor(this@HomeActivity, colorRes)
+                statusText.setTextColor(color)
+                statusDot.backgroundTintList = ColorStateList.valueOf(color)
             }
         }
     }

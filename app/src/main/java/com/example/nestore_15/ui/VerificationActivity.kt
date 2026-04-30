@@ -6,6 +6,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import com.example.nestore_15.R
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.viewmodel.VerificationUiState
@@ -26,6 +27,7 @@ class VerificationActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.verification)
+        setupBackNavigation()
 
         instructionText = findViewById(R.id.instructionText)
         uploadStatusText = findViewById(R.id.uploadStatusText)
@@ -68,6 +70,16 @@ class VerificationActivity : AppCompatActivity() {
                     Toast.makeText(this, state.message, Toast.LENGTH_SHORT).show()
                 }
             }
+        }
+    }
+
+    private fun setupBackNavigation() {
+        val toolbar = findViewById<Toolbar>(R.id.secondaryToolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
+        toolbar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
         }
     }
 }
