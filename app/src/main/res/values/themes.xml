@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="Theme.Nestore_15" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Theme.Nestore_15" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="colorPrimary">@color/royal_blue</item>
         <item name="colorPrimaryDark">@color/cobalt_blue</item>
         <item name="colorAccent">@color/cobalt_blue</item>
