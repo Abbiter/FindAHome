@@ -37,6 +37,18 @@
             android:name=".ui.ProviderHomeActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.ProviderAddPropertyActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.ProviderManageListingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.ProviderInquiriesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.ProviderListingDetailActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.ProfileActivity"
             android:exported="false" />
         <activity
