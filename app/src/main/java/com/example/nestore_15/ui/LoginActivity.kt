@@ -45,7 +45,7 @@ class LoginActivity : AppCompatActivity() {
             when (state) {
                 LoginUiState.Idle -> Unit
                 LoginUiState.Loading -> Unit
-                LoginUiState.Success -> {
+                is LoginUiState.Success -> {
                     // #region agent log
                     DebugLogger.log(
                         runId = "pre-fix",
@@ -57,7 +57,16 @@ class LoginActivity : AppCompatActivity() {
                     Toast.makeText(this, "Welcome to Find A Home!", Toast.LENGTH_SHORT).show()
                     viewModel.acknowledgeState()
                     lifecycleScope.launch {
-                        val role = sessionManager.userRole.first() ?: UserRole.STUDENT
+                        val role = state.role
+                        // #region agent log
+                        DebugLogger.log(
+                            runId = "post-fix",
+                            hypothesisId = "H6",
+                            location = "LoginActivity.kt:64",
+                            message = "Using role from LoginUiState.Success payload",
+                            data = mapOf("role" to role.name)
+                        )
+                        // #endregion
                         val destination = when (role) {
                             UserRole.STUDENT -> HomeActivity::class.java
                             UserRole.PROVIDER -> ProviderHomeActivity::class.java
