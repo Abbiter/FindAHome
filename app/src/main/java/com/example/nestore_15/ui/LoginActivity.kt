@@ -33,7 +33,6 @@ class LoginActivity : AppCompatActivity() {
         )
 
         setContentView(R.layout.login)
-        testFirebaseConnection(this)
 
         val email = findViewById<EditText>(R.id.emailInput)
         val password = findViewById<EditText>(R.id.passwordInput)

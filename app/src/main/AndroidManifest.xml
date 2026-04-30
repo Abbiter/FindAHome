@@ -16,14 +16,19 @@
         android:theme="@style/Theme.Nestore_15">
 
         <activity
-            android:name=".ui.LoginActivity"
+            android:name=".ui.SplashActivity"
             android:exported="true"
-            android:windowSoftInputMode="adjustResize">
+            android:theme="@style/Theme.Nestore_15">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ui.LoginActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ui.RegisterActivity"
