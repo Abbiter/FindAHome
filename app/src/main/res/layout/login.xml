@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/ethereal_gradient">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/loginCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="32dp"
+        app:cardBackgroundColor="@color/overlay_white_80"
+        app:cardCornerRadius="40dp"
+        app:cardElevation="0dp"
+        app:layout_constraintVertical_bias="0.45"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="32dp"
+            android:paddingVertical="48dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Find A Home"
+                android:textColor="@color/royal_blue"
+                android:textSize="38sp"
+                android:fontFamily="sans-serif-black"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Welcome back to the campus hub."
+                android:textColor="@color/deep_royal_text"
+                android:textSize="14sp"
+                android:layout_marginBottom="48dp"/> <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="EMAIL ADDRESS"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:layout_marginStart="16dp"
+            android:textColor="@color/deep_royal_text"/>
+
+            <EditText
+                android:id="@+id/emailInput"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/input_glass_bg"
+                android:drawableStart="@drawable/ic_mail"
+                android:drawablePadding="16dp"
+                android:hint="student@ub.ac.bw"
+                android:paddingHorizontal="24dp"
+                android:inputType="textEmailAddress"
+                android:textColorHint="@color/hint_blue"
+                android:textSize="14sp"/>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"> <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PASSWORD"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:layout_marginStart="16dp"
+                android:textColor="@color/deep_royal_text"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:text="FORGOT PASSWORD?"
+                    android:textColor="@color/cobalt_blue"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </RelativeLayout>
+
+            <EditText
+                android:id="@+id/passwordInput"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/input_glass_bg"
+                android:drawableStart="@drawable/ic_lock"
+                android:drawableEnd="@drawable/ic_visibility"
+                android:drawablePadding="16dp"
+                android:hint="••••••••"
+                android:inputType="textPassword"
+                android:paddingHorizontal="24dp"
+                android:textColorHint="@color/hint_blue"
+                android:textSize="14sp"/>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/loginBtn"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="36dp"
+                android:background="@drawable/btn_primary_gradient"
+                android:text="Login"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_marginVertical="28dp">
+                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" android:background="@color/divider_soft"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="  OR  " android:textSize="11sp" android:textColor="@color/hint_blue"/>
+                <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" android:background="@color/divider_soft"/>
+            </LinearLayout>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/registerBtn"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:background="@drawable/btn_secondary_outline"
+                android:text="Register"
+                android:textAllCaps="false"
+                android:textColor="@color/deep_royal_text"
+                android:textSize="16sp"
+                android:textStyle="bold"/>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "904766839319",
+    "project_id": "findahome-50b4d",
+    "storage_bucket": "findahome-50b4d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:904766839319:android:dc083f3b6ca4ffadefda52",
+        "android_client_info": {
+          "package_name": "com.example.nestore_15"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJaDim4tddKaYMZH7Nyscql4Bx6rhTNVI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

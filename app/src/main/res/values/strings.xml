@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Find A Home</string>
+    <string name="open">Open Navigation Drawer</string>
+    <string name="close">Close Navigation Drawer</string>
+    <string name="listing_price_monthly">P%1$s / month</string>
+    <string name="listing_available_on">Available: %1$s</string>
+    <string name="listing_status_reserved">Reserved</string>
+    <string name="listing_price_monthly_sample">P1200 / month</string>
+    <string name="listing_available_on_sample">Available: 12 May</string>
+</resources>

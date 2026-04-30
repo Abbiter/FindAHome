@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary -->
+    <color name="royal_blue">#2A52BE</color>
+    <color name="cobalt_blue">#0047AB</color>
+
+    <!-- Secondary -->
+    <color name="mid_blue">#3B6EDC</color>
+
+    <!-- Backgrounds -->
+    <color name="frost">#EAF1FD</color>
+    <color name="ghost_white">#F3F7FE</color>
+
+    <!-- Text -->
+    <color name="midnight_navy">#0A1628</color>
+    <color name="deep_royal_text">#1C2E6B</color>
+
+    <!-- Basic and utility -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="glass_white">#66FFFFFF</color>
+    <color name="glass_white_soft">#4DFFFFFF</color>
+    <color name="glass_stroke_soft">#26FFFFFF</color>
+    <color name="divider_soft">#1A0A1628</color>
+    <color name="hint_blue">#7A8FBF</color>
+    <color name="overlay_white_20">#33FFFFFF</color>
+    <color name="overlay_white_80">#CCFFFFFF</color>
+    <color name="available_green">#4CAF50</color>
+    <color name="reserved_gray">#808080</color>
+
+    <!-- Backward-compatible aliases -->
+    <color name="nestora_primary">@color/royal_blue</color>
+    <color name="nestora_secondary">@color/cobalt_blue</color>
+    <color name="text_main">@color/midnight_navy</color>
+    <color name="text_secondary">@color/deep_royal_text</color>
+    <color name="pula_teal">@color/frost</color>
+</resources>

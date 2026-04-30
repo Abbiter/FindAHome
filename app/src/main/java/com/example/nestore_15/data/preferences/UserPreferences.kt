@@ -1,0 +1,59 @@
+package com.example.nestore_15.data.preferences
+
+import android.content.Context
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import com.example.nestore_15.data.model.User
+import com.example.nestore_15.data.model.UserRole
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
+import java.io.IOException
+
+private val Context.userDataStore by preferencesDataStore(name = "user_preferences")
+
+class UserPreferences(private val context: Context) {
+
+    private object Keys {
+        val userId = stringPreferencesKey("user_id")
+        val userEmail = stringPreferencesKey("user_email")
+        val userRole = stringPreferencesKey("user_role")
+        val isVerified = booleanPreferencesKey("is_verified")
+    }
+
+    val currentUser: Flow<User?> =
+        context.userDataStore.data
+            .catch { exception ->
+                if (exception is IOException) emit(emptyPreferences())
+                else throw exception
+            }
+            .map { preferences ->
+                preferences.toUserOrNull()
+            }
+
+    suspend fun saveUser(user: User) {
+        context.userDataStore.edit { prefs ->
+            prefs[Keys.userId] = user.id
+            prefs[Keys.userEmail] = user.email
+            prefs[Keys.userRole] = user.role.name
+            prefs[Keys.isVerified] = user.isVerified
+        }
+    }
+
+    suspend fun clearUser() {
+        context.userDataStore.edit { it.clear() }
+    }
+
+    private fun Preferences.toUserOrNull(): User? {
+        val id = this[Keys.userId] ?: return null
+        val email = this[Keys.userEmail] ?: return null
+        val roleValue = this[Keys.userRole] ?: return null
+        val role = runCatching { UserRole.valueOf(roleValue) }.getOrNull() ?: return null
+        val isVerified = this[Keys.isVerified] ?: false
+        return User(id = id, email = email, role = role, isVerified = isVerified)
+    }
+}
