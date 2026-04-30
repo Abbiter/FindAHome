@@ -4,12 +4,14 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.viewModels
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -19,7 +21,8 @@ import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.viewmodel.ProviderDashboardUiState
 import com.example.nestore_15.viewmodel.ProviderDashboardViewModel
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.chip.Chip
+import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import android.view.View
@@ -74,50 +77,17 @@ class ProviderHomeActivity : AppCompatActivity() {
 
     private fun initializeDashboard() {
         listingsAdapter = ProviderListingPreviewAdapter(::openListingDetails)
+        val drawerLayout = findViewById<DrawerLayout>(R.id.providerDrawerLayout)
+        val navigationView = findViewById<NavigationView>(R.id.providerNavView)
         val recyclerView = findViewById<RecyclerView>(R.id.rvProviderListingsPreview)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = listingsAdapter
 
-        bindStatLabel(R.id.statTotalListings, "Total Listings")
-        bindStatLabel(R.id.statActiveListings, "Active Listings")
-        bindStatLabel(R.id.statInquiries, "Bookings / Inquiries")
-
-        configureActionCard(
-            cardId = R.id.actionAddProperty,
-            iconRes = android.R.drawable.ic_input_add,
-            title = "Add New Property",
-            subtitle = "Publish a new listing"
-        )
-        configureActionCard(
-            cardId = R.id.actionManageListings,
-            iconRes = android.R.drawable.ic_menu_edit,
-            title = "Manage Listings",
-            subtitle = "Update availability and pricing"
-        )
-        configureActionCard(
-            cardId = R.id.actionViewInquiries,
-            iconRes = android.R.drawable.ic_dialog_email,
-            title = "View Inquiries",
-            subtitle = "Review bookings and requests"
-        )
-
-        findViewById<BottomNavigationView>(R.id.providerBottomNav).setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.provider_nav_dashboard -> true
-                R.id.provider_nav_listings -> {
-                    startActivity(Intent(this, ProviderManageListingsActivity::class.java))
-                    true
-                }
-                R.id.provider_nav_profile -> {
-                    startActivity(Intent(this, ProfileActivity::class.java))
-                    true
-                }
-                else -> false
-            }
-        }
-
         observeVerificationStatus()
 
+        findViewById<ImageView>(R.id.btnProviderMenu).setOnClickListener {
+            drawerLayout.openDrawer(GravityCompat.START)
+        }
         findViewById<ImageView>(R.id.btnProviderProfileIcon).setOnClickListener {
             startActivity(Intent(this, ProfileActivity::class.java))
         }
@@ -135,17 +105,41 @@ class ProviderHomeActivity : AppCompatActivity() {
             startActivity(Intent(this, ProviderAddPropertyActivity::class.java))
         }
 
-        findViewById<View>(R.id.btnProviderLogout).setOnClickListener {
-            lifecycleScope.launch {
-                sessionManager.clearSession()
-                startActivity(
-                    Intent(this@ProviderHomeActivity, LoginActivity::class.java).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        navigationView.setNavigationItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_home -> Unit
+                R.id.nav_saved -> startActivity(Intent(this, ProviderManageListingsActivity::class.java))
+                R.id.nav_chats -> startActivity(Intent(this, ProviderInquiriesActivity::class.java))
+                R.id.nav_profile -> startActivity(Intent(this, ProfileActivity::class.java))
+                R.id.nav_logout -> {
+                    lifecycleScope.launch {
+                        sessionManager.clearSession()
+                        startActivity(
+                            Intent(this@ProviderHomeActivity, LoginActivity::class.java).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                            }
+                        )
+                        finish()
                     }
-                )
-                finish()
+                }
             }
+            drawerLayout.closeDrawers()
+            true
         }
+
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                        drawerLayout.closeDrawer(GravityCompat.START)
+                    } else {
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                    }
+                }
+            }
+        )
 
         val ownerId = sessionManager.getCurrentUserId()
         if (!ownerId.isNullOrBlank()) {
@@ -161,43 +155,17 @@ class ProviderHomeActivity : AppCompatActivity() {
         findViewById<ProgressBar>(R.id.providerDashboardLoading).visibility =
             if (state.isLoading) View.VISIBLE else View.GONE
 
-        bindStatCard(
-            cardId = R.id.statTotalListings,
-            value = state.stats.totalListings.toString()
-        )
-        bindStatCard(
-            cardId = R.id.statActiveListings,
-            value = state.stats.activeListings.toString()
-        )
-        bindStatCard(
-            cardId = R.id.statInquiries,
-            value = state.stats.inquiriesCount.toString()
-        )
+        findViewById<Chip>(R.id.chipTotalListings).text = "Total: ${state.stats.totalListings}"
+        findViewById<Chip>(R.id.chipActiveListings).text = "Active: ${state.stats.activeListings}"
+        findViewById<Chip>(R.id.chipInquiries).text = "Inquiries: ${state.stats.inquiriesCount}"
 
         val hasListings = state.listingsPreview.isNotEmpty()
         findViewById<RecyclerView>(R.id.rvProviderListingsPreview).visibility =
             if (hasListings) View.VISIBLE else View.GONE
-        findViewById<LinearLayout>(R.id.providerEmptyState).visibility =
+        findViewById<View>(R.id.providerEmptyState).visibility =
             if (hasListings) View.GONE else View.VISIBLE
 
         listingsAdapter.submitList(state.listingsPreview)
-    }
-
-    private fun bindStatCard(cardId: Int, value: String) {
-        val card = findViewById<View>(cardId)
-        card.findViewById<TextView>(R.id.tvStatValue).text = value
-    }
-
-    private fun bindStatLabel(cardId: Int, label: String) {
-        val card = findViewById<View>(cardId)
-        card.findViewById<TextView>(R.id.tvStatLabel).text = label
-    }
-
-    private fun configureActionCard(cardId: Int, iconRes: Int, title: String, subtitle: String) {
-        val card = findViewById<View>(cardId)
-        card.findViewById<ImageView>(R.id.ivActionIcon).setImageResource(iconRes)
-        card.findViewById<TextView>(R.id.tvActionTitle).text = title
-        card.findViewById<TextView>(R.id.tvActionSubtitle).text = subtitle
     }
 
     private fun openListingDetails(listing: Listing) {

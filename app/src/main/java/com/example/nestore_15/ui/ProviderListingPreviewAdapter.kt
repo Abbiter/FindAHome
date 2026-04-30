@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.nestore_15.R
@@ -30,7 +31,7 @@ class ProviderListingPreviewAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_provider_listing_preview, parent, false)
+            .inflate(R.layout.item_listing, parent, false)
         return ViewHolder(view)
     }
 
@@ -46,10 +47,10 @@ class ProviderListingPreviewAdapter(
         )
 
         val status = resolveStatus(item)
+        holder.status.isVisible = true
         holder.status.text = status.label
         holder.status.setTextColor(ContextCompat.getColor(context, status.textColor))
-        holder.status.backgroundTintList =
-            ContextCompat.getColorStateList(context, status.bgColor)
+        holder.status.backgroundTintList = ContextCompat.getColorStateList(context, status.bgColor)
 
         Glide.with(holder.itemView.context)
             .load(item.imageUrl)
@@ -58,6 +59,8 @@ class ProviderListingPreviewAdapter(
             .centerCrop()
             .into(holder.image)
 
+        holder.itemView.alpha = 1f
+        holder.itemView.isEnabled = true
         holder.itemView.setOnClickListener { onItemClick(item) }
     }
 
