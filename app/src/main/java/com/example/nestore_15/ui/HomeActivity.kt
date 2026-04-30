@@ -88,6 +88,10 @@ class HomeActivity : AppCompatActivity() {
                 }
                 UserRole.STUDENT -> Unit
                 null -> {
+                    if (sessionManager.getCurrentUserId() != null) {
+                        initializeStudentUi()
+                        return@launch
+                    }
                     startActivity(
                         Intent(this@HomeActivity, LoginActivity::class.java).apply {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)

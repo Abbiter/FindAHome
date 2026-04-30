@@ -8,7 +8,6 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.lifecycle.lifecycleScope
 import com.example.nestore_15.R
 import android.content.Intent
 import com.example.nestore_15.data.model.RegistrationRole
@@ -17,7 +16,6 @@ import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.viewmodel.RegisterFieldErrors
 import com.example.nestore_15.viewmodel.RegisterUiState
 import com.example.nestore_15.viewmodel.RegisterViewModel
-import kotlinx.coroutines.launch
 
 class RegisterActivity : AppCompatActivity() {
 
@@ -55,19 +53,17 @@ class RegisterActivity : AppCompatActivity() {
                 is RegisterUiState.Success -> {
                     clearFieldErrors()
                     viewModel.acknowledgeState()
-                    lifecycleScope.launch {
-                        val destination = when (state.role) {
-                            UserRole.STUDENT -> HomeActivity::class.java
-                            UserRole.PROVIDER -> ProviderHomeActivity::class.java
-                        }
-                        startActivity(
-                            Intent(this@RegisterActivity, destination).apply {
-                                putExtra(EXTRA_ROLE_OVERRIDE, state.role.name)
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                            }
-                        )
-                        finish()
+                    val destination = when (state.role) {
+                        UserRole.STUDENT -> HomeActivity::class.java
+                        UserRole.PROVIDER -> ProviderHomeActivity::class.java
                     }
+                    startActivity(
+                        Intent(this@RegisterActivity, destination).apply {
+                            putExtra(EXTRA_ROLE_OVERRIDE, state.role.name)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        }
+                    )
+                    finish()
                 }
                 is RegisterUiState.InvalidInput -> {
                     renderValidationErrors(state.errors)

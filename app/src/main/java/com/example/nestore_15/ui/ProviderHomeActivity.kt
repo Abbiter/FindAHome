@@ -60,6 +60,11 @@ class ProviderHomeActivity : AppCompatActivity() {
                     finish()
                 }
                 null -> {
+                    if (sessionManager.getCurrentUserId() != null) {
+                        setContentView(R.layout.provider_home)
+                        bindProviderActions()
+                        return@launch
+                    }
                     startActivity(
                         Intent(this@ProviderHomeActivity, LoginActivity::class.java).apply {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
