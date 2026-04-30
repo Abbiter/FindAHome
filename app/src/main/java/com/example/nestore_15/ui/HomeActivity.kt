@@ -21,7 +21,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.nestore_15.R
-import com.example.nestore_15.debug.DebugLogger
 import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.preferences.ListingFilterPreferencesStore
 import com.example.nestore_15.data.repository.ListingRepository
@@ -59,15 +58,6 @@ class HomeActivity : AppCompatActivity() {
             val roleFromIntent = intent.getStringExtra(RegisterActivity.EXTRA_ROLE_OVERRIDE)
                 ?.let { runCatching { UserRole.valueOf(it) }.getOrNull() }
             val role = sessionManager.userRole.first() ?: roleFromIntent
-            // #region agent log
-            DebugLogger.log(
-                runId = "pre-fix",
-                hypothesisId = "H3",
-                location = "HomeActivity.kt:61",
-                message = "HomeActivity gate evaluated role",
-                data = mapOf("role" to (role?.name ?: "null"))
-            )
-            // #endregion
             when (role) {
                 UserRole.PROVIDER -> {
                     startActivity(
@@ -75,14 +65,6 @@ class HomeActivity : AppCompatActivity() {
                             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                         }
                     )
-                    // #region agent log
-                    DebugLogger.log(
-                        runId = "pre-fix",
-                        hypothesisId = "H3",
-                        location = "HomeActivity.kt:76",
-                        message = "HomeActivity redirected provider to ProviderHomeActivity"
-                    )
-                    // #endregion
                     finish()
                     return@launch
                 }
@@ -97,14 +79,6 @@ class HomeActivity : AppCompatActivity() {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                         }
                     )
-                    // #region agent log
-                    DebugLogger.log(
-                        runId = "pre-fix",
-                        hypothesisId = "H4",
-                        location = "HomeActivity.kt:90",
-                        message = "HomeActivity redirected null role to LoginActivity"
-                    )
-                    // #endregion
                     finish()
                     return@launch
                 }
