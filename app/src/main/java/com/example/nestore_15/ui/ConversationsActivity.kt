@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.nestore_15.R
 import com.example.nestore_15.data.repository.ChatRepository
 import com.example.nestore_15.data.session.SessionManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 class ConversationsActivity : AppCompatActivity() {
@@ -50,9 +51,19 @@ class ConversationsActivity : AppCompatActivity() {
         recycler.adapter = adapter
 
         lifecycleScope.launch {
-            chatRepository.observeConversations(currentUserId).collect { conversations ->
-                adapter.submit(conversations)
-                empty.visibility = if (conversations.isEmpty()) View.VISIBLE else View.GONE
+            runCatching {
+                chatRepository.observeConversations(currentUserId).collect { conversations ->
+                    adapter.submit(conversations)
+                    empty.visibility = if (conversations.isEmpty()) View.VISIBLE else View.GONE
+                }
+            }.onFailure { err ->
+                if (err is CancellationException) return@onFailure
+                Toast.makeText(
+                    this@ConversationsActivity,
+                    err.message ?: "Could not load conversations",
+                    Toast.LENGTH_SHORT
+                ).show()
+                empty.visibility = View.VISIBLE
             }
         }
     }

@@ -100,7 +100,6 @@ class ChatRepository(
     fun observeConversations(currentUserId: String): Flow<List<ConversationSummary>> = callbackFlow {
         val registration = firestore.collection("conversations")
             .whereArrayContains("participants", currentUserId)
-            .orderBy("lastUpdated")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
