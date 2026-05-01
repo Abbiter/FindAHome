@@ -87,6 +87,19 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/regSubtitle" />
 
+            <TextView
+                android:id="@+id/tvDebugMode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Debug mode active"
+                android:textColor="@color/cobalt_blue"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvRegStepHint" />
+
             <LinearLayout
                 android:id="@+id/roleSwitcher"
                 android:layout_width="0dp"
@@ -97,7 +110,7 @@
                 android:padding="4dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvRegStepHint">
+                app:layout_constraintTop_toBottomOf="@id/tvDebugMode">
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btnStudent"
                     android:layout_width="0dp"
@@ -120,6 +133,41 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
+            <LinearLayout
+                android:id="@+id/debugQuickActions"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/roleSwitcher">
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnDebugVerifiedStudent"
+                    style="@style/Widget.Nestore.Button.Secondary"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="Verified Student"
+                    android:textSize="13sp" />
+
+                <Space
+                    android:layout_width="8dp"
+                    android:layout_height="1dp" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnDebugVerifiedProvider"
+                    style="@style/Widget.Nestore.Button.Secondary"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="Verified Provider"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
             <androidx.cardview.widget.CardView
                 android:id="@+id/registrationCard"
                 android:layout_width="0dp"
@@ -131,7 +179,7 @@
                 app:cardElevation="0dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/roleSwitcher"
+                app:layout_constraintTop_toBottomOf="@id/debugQuickActions"
                 app:layout_constraintBottom_toBottomOf="parent">
 
                 <LinearLayout

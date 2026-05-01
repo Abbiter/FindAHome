@@ -20,6 +20,7 @@ import com.example.nestore_15.data.repository.PropertyRepository
 import com.example.nestore_15.data.session.ProviderSessionResult
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.data.session.resolveProviderSession
+import com.example.nestore_15.debug.DebugTools
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
 import android.content.Intent
@@ -89,6 +90,14 @@ class ProviderAddPropertyActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.btnSaveProperty).setOnClickListener {
             saveProperty(ownerId)
         }
+
+        val debugButton = findViewById<MaterialButton>(R.id.btnGenerateTestListing)
+        if (DebugTools.isSessionDebugModeActive()) {
+            debugButton.visibility = View.VISIBLE
+            debugButton.setOnClickListener { generateTestListing(ownerId) }
+        } else {
+            debugButton.visibility = View.GONE
+        }
         updateImageCountLabel()
     }
 
@@ -156,6 +165,33 @@ class ProviderAddPropertyActivity : AppCompatActivity() {
             }
             pb.visibility = View.GONE
             btn.isEnabled = true
+        }
+    }
+
+    private fun generateTestListing(ownerId: String) {
+        lifecycleScope.launch {
+            val now = System.currentTimeMillis()
+            runCatching {
+                propertyRepository.createProperty(
+                    ownerId = ownerId,
+                    title = "Debug Listing $now",
+                    description = "Generated in debug mode for provider flow testing.",
+                    location = "Gaborone",
+                    priceBwp = 1800.0,
+                    roomCount = 1,
+                    availabilityStatus = PropertyStatus.AVAILABLE,
+                    availabilityDate = "",
+                    imageUris = emptyList()
+                )
+            }.onSuccess {
+                Toast.makeText(this@ProviderAddPropertyActivity, "Test listing created", Toast.LENGTH_SHORT).show()
+            }.onFailure { e ->
+                Toast.makeText(
+                    this@ProviderAddPropertyActivity,
+                    e.message ?: "Could not create test listing",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
 }

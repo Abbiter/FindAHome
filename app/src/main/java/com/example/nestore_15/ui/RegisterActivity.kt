@@ -7,6 +7,8 @@ import android.text.method.HideReturnsTransformationMethod
 import android.text.method.PasswordTransformationMethod
 import android.view.MotionEvent
 import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +18,7 @@ import com.example.nestore_15.R
 import com.example.nestore_15.data.model.RegistrationRole
 import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.session.SessionManager
+import com.example.nestore_15.debug.DebugTools
 import com.example.nestore_15.viewmodel.RegisterFieldErrors
 import com.example.nestore_15.viewmodel.RegisterUiState
 import com.example.nestore_15.viewmodel.RegisterViewModel
@@ -34,6 +37,13 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var emailInput: EditText
     private lateinit var passwordInput: EditText
     private lateinit var createAccountBtn: AppCompatButton
+    private lateinit var tvDebugMode: TextView
+    private lateinit var debugQuickActions: LinearLayout
+    private lateinit var btnDebugVerifiedStudent: AppCompatButton
+    private lateinit var btnDebugVerifiedProvider: AppCompatButton
+
+    private var titleTapCount = 0
+    private var debugQuickTargetRole: UserRole? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,7 +57,13 @@ class RegisterActivity : AppCompatActivity() {
         emailInput = findViewById(R.id.emailInput)
         passwordInput = findViewById(R.id.passwordInput)
         createAccountBtn = findViewById(R.id.createAccountBtn)
+        tvDebugMode = findViewById(R.id.tvDebugMode)
+        debugQuickActions = findViewById(R.id.debugQuickActions)
+        btnDebugVerifiedStudent = findViewById(R.id.btnDebugVerifiedStudent)
+        btnDebugVerifiedProvider = findViewById(R.id.btnDebugVerifiedProvider)
         setupPasswordVisibilityToggle(passwordInput)
+        setupHiddenDebugTrigger()
+        refreshDebugUi()
 
         viewModel.selectedRole.observe(this) { role ->
             updateRoleToggleUi(role)
@@ -59,16 +75,36 @@ class RegisterActivity : AppCompatActivity() {
                 is RegisterUiState.Success -> {
                     clearFieldErrors()
                     viewModel.acknowledgeState()
-                    startActivity(
-                        Intent(this@RegisterActivity, CompleteProfileOnboardingActivity::class.java).apply {
-                            putExtra(EXTRA_ROLE_OVERRIDE, state.role.name)
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                    val quickRole = debugQuickTargetRole
+                    debugQuickTargetRole = null
+                    if (quickRole != null) {
+                        val destination = if (quickRole == UserRole.STUDENT) {
+                            HomeActivity::class.java
+                        } else {
+                            ProviderHomeActivity::class.java
                         }
-                    )
+                        startActivity(
+                            Intent(this@RegisterActivity, destination).apply {
+                                putExtra(EXTRA_ROLE_OVERRIDE, quickRole.name)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                            }
+                        )
+                    } else {
+                        startActivity(
+                            Intent(this@RegisterActivity, CompleteProfileOnboardingActivity::class.java).apply {
+                                putExtra(EXTRA_ROLE_OVERRIDE, state.role.name)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                            }
+                        )
+                    }
                     finish()
                 }
                 is RegisterUiState.InvalidInput -> {
                     renderValidationErrors(state.errors)
+                    viewModel.acknowledgeState()
+                }
+                is RegisterUiState.Error -> {
+                    Toast.makeText(this, state.message, Toast.LENGTH_SHORT).show()
                     viewModel.acknowledgeState()
                 }
             }
@@ -78,6 +114,7 @@ class RegisterActivity : AppCompatActivity() {
         btnProvider.setOnClickListener { viewModel.selectRole(RegistrationRole.HOME_PROVIDER) }
 
         createAccountBtn.setOnClickListener {
+            debugQuickTargetRole = null
             clearFieldErrors()
             viewModel.submitRegistration(
                 fullNameInput.text.toString(),
@@ -85,6 +122,19 @@ class RegisterActivity : AppCompatActivity() {
                 emailInput.text.toString(),
                 passwordInput.text.toString()
             )
+        }
+
+        btnDebugVerifiedStudent.setOnClickListener {
+            if (!DebugTools.isSessionDebugModeActive()) return@setOnClickListener
+            debugQuickTargetRole = UserRole.STUDENT
+            autofillDebugInputs("Debug Student", "+26771234567")
+            viewModel.submitDebugVerifiedRegistration(RegistrationRole.STUDENT)
+        }
+        btnDebugVerifiedProvider.setOnClickListener {
+            if (!DebugTools.isSessionDebugModeActive()) return@setOnClickListener
+            debugQuickTargetRole = UserRole.PROVIDER
+            autofillDebugInputs("Debug Provider", "+26771234568")
+            viewModel.submitDebugVerifiedRegistration(RegistrationRole.HOME_PROVIDER)
         }
     }
 
@@ -139,6 +189,32 @@ class RegisterActivity : AppCompatActivity() {
         toolbar.setNavigationOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
+    }
+
+    private fun setupHiddenDebugTrigger() {
+        if (!DebugTools.available) return
+        findViewById<TextView>(R.id.regTitle).setOnClickListener {
+            titleTapCount += 1
+            if (titleTapCount >= 7) {
+                titleTapCount = 0
+                DebugTools.activateSessionDebugMode()
+                refreshDebugUi()
+                Toast.makeText(this, "Debug Mode Active", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun refreshDebugUi() {
+        val active = DebugTools.isSessionDebugModeActive()
+        tvDebugMode.visibility = if (active) android.view.View.VISIBLE else android.view.View.GONE
+        debugQuickActions.visibility = if (active) android.view.View.VISIBLE else android.view.View.GONE
+    }
+
+    private fun autofillDebugInputs(name: String, phone: String) {
+        fullNameInput.setText(name)
+        phoneInput.setText(phone)
+        emailInput.setText("")
+        passwordInput.setText("")
     }
 
     private fun setupPasswordVisibilityToggle(passwordField: EditText) {

@@ -3,6 +3,7 @@ package com.example.nestore_15.data.repository
 import com.example.nestore_15.data.model.RegistrationRole
 import com.example.nestore_15.data.model.User
 import com.example.nestore_15.data.model.UserRole
+import com.example.nestore_15.data.model.VerificationStatus
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
@@ -29,7 +30,8 @@ class AuthRepository(
         email: String,
         password: String,
         role: RegistrationRole,
-        phone: String
+        phone: String,
+        forceVerified: Boolean = false
     ): Result<User> {
         return runCatching {
             val authResult = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
@@ -40,9 +42,10 @@ class AuthRepository(
                 id = firebaseUser.uid,
                 email = firebaseUser.email ?: email,
                 role = roleValue,
-                isVerified = false,
+                isVerified = forceVerified,
                 fullName = fullName.trim(),
-                phone = phone.trim()
+                phone = phone.trim(),
+                verificationStatus = if (forceVerified) VerificationStatus.VERIFIED else VerificationStatus.NOT_SUBMITTED
             )
 
             firestore.collection("users").document(userProfile.id)
@@ -61,8 +64,9 @@ class AuthRepository(
         phone: String,
         email: String,
         password: String,
-        role: RegistrationRole
-    ): Result<User> = register(fullName, email, password, role, phone)
+        role: RegistrationRole,
+        forceVerified: Boolean = false
+    ): Result<User> = register(fullName, email, password, role, phone, forceVerified)
 
     private suspend fun fetchUserProfile(firebaseUser: FirebaseUser): User {
         val snapshot = firestore.collection("users").document(firebaseUser.uid).get().await()

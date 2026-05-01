@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.nestore_15.data.model.RegistrationRole
+import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.repository.AuthRepository
 import com.example.nestore_15.data.session.SessionManager
 import kotlinx.coroutines.launch
@@ -24,7 +25,8 @@ data class RegisterFieldErrors(
 sealed class RegisterUiState {
     data object Idle : RegisterUiState()
     data class InvalidInput(val errors: RegisterFieldErrors) : RegisterUiState()
-    data class Success(val role: com.example.nestore_15.data.model.UserRole) : RegisterUiState()
+    data class Success(val role: UserRole) : RegisterUiState()
+    data class Error(val message: String) : RegisterUiState()
 }
 
 class RegisterViewModel(
@@ -70,8 +72,36 @@ class RegisterViewModel(
                     sessionManager.saveUser(user)
                     _uiState.value = RegisterUiState.Success(user.role)
                 },
-                onFailure = {
-                    _uiState.value = RegisterUiState.Idle
+                onFailure = { error ->
+                    _uiState.value = RegisterUiState.Error(error.message ?: "Registration failed")
+                }
+            )
+        }
+    }
+
+    fun submitDebugVerifiedRegistration(role: RegistrationRole) {
+        val ts = System.currentTimeMillis()
+        val fullName = if (role == RegistrationRole.STUDENT) "Debug Student" else "Debug Provider"
+        val phone = "71234567"
+        val emailPrefix = if (role == RegistrationRole.STUDENT) "debug.student" else "debug.provider"
+        val email = "$emailPrefix.$ts@findahome.test"
+        val password = "Password123!"
+
+        viewModelScope.launch {
+            authRepository.mockRegister(
+                fullName = fullName,
+                phone = phone,
+                email = email,
+                password = password,
+                role = role,
+                forceVerified = true
+            ).fold(
+                onSuccess = { user ->
+                    sessionManager.saveUser(user)
+                    _uiState.value = RegisterUiState.Success(user.role)
+                },
+                onFailure = { error ->
+                    _uiState.value = RegisterUiState.Error(error.message ?: "Debug registration failed")
                 }
             )
         }
