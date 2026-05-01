@@ -1,7 +1,6 @@
 package com.example.nestore_15.data.session
 
 import com.example.nestore_15.data.model.UserRole
-import kotlinx.coroutines.flow.first
 
 sealed class ProviderSessionResult {
     data class Active(val userId: String) : ProviderSessionResult()
@@ -10,11 +9,11 @@ sealed class ProviderSessionResult {
 }
 
 suspend fun SessionManager.resolveProviderSession(): ProviderSessionResult {
-    val role = userRole.first()
-    val uid = getCurrentUserId()
-    return when {
-        role == UserRole.PROVIDER && !uid.isNullOrBlank() -> ProviderSessionResult.Active(uid)
-        role == UserRole.STUDENT -> ProviderSessionResult.RedirectStudent
-        else -> ProviderSessionResult.RedirectLogin
+    val uid = getCurrentUserId() ?: return ProviderSessionResult.RedirectLogin
+    val user = awaitCurrentUser() ?: return ProviderSessionResult.RedirectLogin
+    if (user.id != uid) return ProviderSessionResult.RedirectLogin
+    return when (user.role) {
+        UserRole.PROVIDER -> ProviderSessionResult.Active(uid)
+        UserRole.STUDENT -> ProviderSessionResult.RedirectStudent
     }
 }

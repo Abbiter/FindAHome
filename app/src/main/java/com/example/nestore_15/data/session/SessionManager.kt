@@ -21,8 +21,10 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class SessionManager(
@@ -81,6 +83,24 @@ class SessionManager(
 
     fun getCurrentUserId(): String? {
         return firebaseAuth.currentUser?.uid
+    }
+
+    /**
+     * Resolves the signed-in user for gated screens. The in-memory [currentUserFlow] can briefly
+     * emit null while Firestore hydrates; we also fall back to DataStore after a short wait so
+     * provider child activities match [ProviderHomeActivity] behaviour (uid present ⇒ not logged out).
+     */
+    suspend fun awaitCurrentUser(): User? {
+        val uid = getCurrentUserId() ?: return null
+        val fromHot = withTimeoutOrNull(800L) {
+            getCurrentUser().first { it != null && it.id == uid }
+        }
+        if (fromHot != null) return fromHot
+        val cached = userPreferences.currentUser.first().takeIf { it?.id == uid }
+        if (cached != null) return cached
+        return withTimeoutOrNull(20_000L) {
+            getCurrentUser().first { it != null && it.id == uid }
+        }
     }
 
     private fun authStateChanges(): Flow<FirebaseUser?> {
