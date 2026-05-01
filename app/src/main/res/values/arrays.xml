@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="botswana_institutions">
+        <item>University of Botswana</item>
+        <item>Botswana International University of Science and Technology (BIUST)</item>
+        <item>Botswana University of Agriculture and Natural Resources (BUAN)</item>
+        <item>Botho University</item>
+        <item>Limkokwing University of Creative Technology (Botswana)</item>
+        <item>Botswana Open University</item>
+        <item>ABM University College</item>
+        <item>Gaborone University College of Law and Professional Studies (GUC)</item>
+        <item>New Era College</item>
+        <item>Boitekanelo College</item>
+        <item>Ba Isago University</item>
+        <item>Botswana Accountancy College (BAC)</item>
+        <item>Gaborone Technical College</item>
+        <item>Francistown College of Technical and Vocational Education</item>
+        <item>Mmadinare Technical College</item>
+        <item>Serowe Institute of Health Sciences</item>
+        <item>Institute of Health Sciences - Gaborone</item>
+        <item>Institute of Health Sciences - Francistown</item>
+    </string-array>
+</resources>

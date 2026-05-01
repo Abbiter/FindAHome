@@ -2,6 +2,9 @@ package com.example.nestore_15.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.text.method.HideReturnsTransformationMethod
+import android.text.method.PasswordTransformationMethod
+import android.view.MotionEvent
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -38,6 +41,7 @@ class LoginActivity : AppCompatActivity() {
         val password = findViewById<EditText>(R.id.passwordInput)
         val loginBtn = findViewById<Button>(R.id.loginBtn)
         val registerBtn = findViewById<Button>(R.id.registerBtn)
+        setupPasswordVisibilityToggle(password)
 
         viewModel.uiState.observe(this) { state ->
             when (state) {
@@ -78,6 +82,27 @@ class LoginActivity : AppCompatActivity() {
                 android.util.Log.e("NESTORA_DEBUG", "Transition failed: ${e.message}")
                 Toast.makeText(this, "Navigation Error", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun setupPasswordVisibilityToggle(passwordInput: EditText) {
+        var isVisible = false
+        passwordInput.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_UP) {
+                val drawableEnd = 2
+                val tappedEnd = event.rawX >= (passwordInput.right - passwordInput.compoundPaddingEnd)
+                if (tappedEnd && passwordInput.compoundDrawables[drawableEnd] != null) {
+                    isVisible = !isVisible
+                    passwordInput.transformationMethod = if (isVisible) {
+                        HideReturnsTransformationMethod.getInstance()
+                    } else {
+                        PasswordTransformationMethod.getInstance()
+                    }
+                    passwordInput.setSelection(passwordInput.text?.length ?: 0)
+                    return@setOnTouchListener true
+                }
+            }
+            false
         }
     }
 }

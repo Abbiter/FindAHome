@@ -73,10 +73,11 @@
                     android:textColor="@color/deep_royal_text"
                     android:textSize="12sp" />
 
-                <EditText
+                <AutoCompleteTextView
                     android:id="@+id/etOnboardStudentInstitution"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/input_glass_bg"
                     android:hint="e.g. University of Botswana"
                     android:inputType="textCapWords"
                     android:minHeight="48dp" />

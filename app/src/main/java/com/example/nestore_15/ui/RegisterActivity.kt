@@ -3,6 +3,9 @@ package com.example.nestore_15.ui
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.text.method.HideReturnsTransformationMethod
+import android.text.method.PasswordTransformationMethod
+import android.view.MotionEvent
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -44,6 +47,7 @@ class RegisterActivity : AppCompatActivity() {
         emailInput = findViewById(R.id.emailInput)
         passwordInput = findViewById(R.id.passwordInput)
         createAccountBtn = findViewById(R.id.createAccountBtn)
+        setupPasswordVisibilityToggle(passwordInput)
 
         viewModel.selectedRole.observe(this) { role ->
             updateRoleToggleUi(role)
@@ -134,6 +138,27 @@ class RegisterActivity : AppCompatActivity() {
         supportActionBar?.setDisplayShowTitleEnabled(false)
         toolbar.setNavigationOnClickListener {
             onBackPressedDispatcher.onBackPressed()
+        }
+    }
+
+    private fun setupPasswordVisibilityToggle(passwordField: EditText) {
+        var isVisible = false
+        passwordField.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_UP) {
+                val drawableEnd = 2
+                val tappedEnd = event.rawX >= (passwordField.right - passwordField.compoundPaddingEnd)
+                if (tappedEnd && passwordField.compoundDrawables[drawableEnd] != null) {
+                    isVisible = !isVisible
+                    passwordField.transformationMethod = if (isVisible) {
+                        HideReturnsTransformationMethod.getInstance()
+                    } else {
+                        PasswordTransformationMethod.getInstance()
+                    }
+                    passwordField.setSelection(passwordField.text?.length ?: 0)
+                    return@setOnTouchListener true
+                }
+            }
+            false
         }
     }
 

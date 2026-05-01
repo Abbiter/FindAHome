@@ -4,6 +4,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -67,6 +69,8 @@ class CompleteProfileOnboardingActivity : AppCompatActivity() {
         findViewById<View>(R.id.onboardingProviderBlock).visibility =
             if (role == UserRole.PROVIDER) View.VISIBLE else View.GONE
 
+        setupInstitutionDropdown()
+
         findViewById<MaterialButton>(R.id.btnOnboardPickEnrollment).setOnClickListener {
             pickEnrollment.launch("*/*")
         }
@@ -98,7 +102,7 @@ class CompleteProfileOnboardingActivity : AppCompatActivity() {
             runCatching {
                 var next = when (role) {
                     UserRole.STUDENT -> base.copy(
-                        studentInstitution = findViewById<EditText>(R.id.etOnboardStudentInstitution).text.toString().trim(),
+                        studentInstitution = findViewById<AutoCompleteTextView>(R.id.etOnboardStudentInstitution).text.toString().trim(),
                         studentId = findViewById<EditText>(R.id.etOnboardStudentId).text.toString().trim(),
                         studentPreferredLocation = findViewById<EditText>(R.id.etOnboardStudentLocation).text.toString().trim(),
                         studentBudgetMax = findViewById<EditText>(R.id.etOnboardStudentBudget).text.toString()
@@ -164,5 +168,21 @@ class CompleteProfileOnboardingActivity : AppCompatActivity() {
             }
         )
         finish()
+    }
+
+    private fun setupInstitutionDropdown() {
+        val field = findViewById<AutoCompleteTextView>(R.id.etOnboardStudentInstitution)
+        val institutions = resources.getStringArray(R.array.botswana_institutions)
+        val adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_dropdown_item_1line,
+            institutions
+        )
+        field.setAdapter(adapter)
+        field.threshold = 1
+        field.setOnClickListener { field.showDropDown() }
+        field.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) field.showDropDown()
+        }
     }
 }
