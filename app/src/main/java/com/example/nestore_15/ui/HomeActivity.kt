@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.nestore_15.R
 import com.example.nestore_15.data.model.UserRole
+import com.example.nestore_15.data.model.VerificationStatus
 import com.example.nestore_15.data.preferences.ListingFilterPreferencesStore
 import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.session.SessionManager
@@ -361,8 +362,11 @@ class HomeActivity : AppCompatActivity() {
             sessionManager.getCurrentUser().collect { user ->
                 val (label, colorRes) = when {
                     user == null -> "Not Verified" to R.color.status_not_verified_red
-                    user.isVerified -> "Verified" to R.color.available_green
-                    else -> "Pending" to R.color.status_pending_orange
+                    user.effectiveVerificationStatus() == VerificationStatus.VERIFIED ->
+                        "Verified" to R.color.available_green
+                    user.effectiveVerificationStatus() == VerificationStatus.PENDING_REVIEW ->
+                        "Pending" to R.color.status_pending_orange
+                    else -> "Not Verified" to R.color.status_not_verified_red
                 }
                 statusText.text = label
                 val color = ContextCompat.getColor(this@HomeActivity, colorRes)

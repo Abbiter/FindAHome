@@ -1,16 +1,19 @@
 package com.example.nestore_15.ui
 
 import android.os.Bundle
-import android.widget.Button
+import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.example.nestore_15.R
+import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.viewmodel.VerificationUiState
 import com.example.nestore_15.viewmodel.VerificationViewModel
+import com.google.android.material.button.MaterialButton
 
 class VerificationActivity : AppCompatActivity() {
 
@@ -19,28 +22,38 @@ class VerificationActivity : AppCompatActivity() {
         VerificationViewModel.factory(sessionManager)
     }
 
-    private lateinit var instructionText: TextView
-    private lateinit var uploadStatusText: TextView
-    private lateinit var uploadButton: Button
-    private lateinit var submitButton: Button
+    private val pickDocument = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri == null) return@registerForActivityResult
+        val idle = viewModel.uiState.value as? VerificationUiState.Idle ?: return@registerForActivityResult
+        when (idle.user.role) {
+            UserRole.STUDENT -> viewModel.uploadEnrollmentDocument(uri)
+            UserRole.PROVIDER -> viewModel.uploadOwnershipProof(uri)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.verification)
         setupBackNavigation()
 
-        instructionText = findViewById(R.id.instructionText)
-        uploadStatusText = findViewById(R.id.uploadStatusText)
-        uploadButton = findViewById(R.id.uploadDocumentBtn)
-        submitButton = findViewById(R.id.submitVerificationBtn)
+        val instructionText = findViewById<TextView>(R.id.instructionText)
+        val uploadStatusText = findViewById<TextView>(R.id.uploadStatusText)
+        val uploadButton = findViewById<MaterialButton>(R.id.uploadDocumentBtn)
+        val submitButton = findViewById<MaterialButton>(R.id.submitVerificationBtn)
 
         uploadButton.setOnClickListener {
-            viewModel.mockUploadDocument()
-            Toast.makeText(this, "Document uploaded (mock)", Toast.LENGTH_SHORT).show()
+            pickDocument.launch("*/*")
         }
 
         submitButton.setOnClickListener {
-            viewModel.submitVerification()
+            viewModel.submitForReview()
+        }
+
+        viewModel.userMessage.observe(this) { msg ->
+            if (!msg.isNullOrBlank()) {
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                viewModel.consumeMessage()
+            }
         }
 
         viewModel.uiState.observe(this) { state ->
@@ -48,26 +61,29 @@ class VerificationActivity : AppCompatActivity() {
                 VerificationUiState.Loading -> {
                     submitButton.isEnabled = false
                     uploadButton.isEnabled = false
-                    uploadStatusText.text = "Loading..."
+                    uploadStatusText.text = "Working…"
                 }
                 is VerificationUiState.Idle -> {
                     submitButton.isEnabled = true
                     uploadButton.isEnabled = true
                     instructionText.text = state.instruction
-                    uploadStatusText.text = if (state.isDocumentUploaded) {
-                        "Document ready for submission"
+                    val hasDoc = when (state.user.role) {
+                        UserRole.STUDENT -> state.user.verificationDocumentUrl.isNotBlank()
+                        UserRole.PROVIDER -> state.user.providerOwnershipProofUrl.isNotBlank()
+                    }
+                    uploadStatusText.text = if (hasDoc) {
+                        "Document on file — you can submit for review."
                     } else {
                         "No document uploaded yet"
                     }
+                    uploadButton.text = when (state.user.role) {
+                        UserRole.STUDENT -> "Upload enrollment proof"
+                        UserRole.PROVIDER -> "Upload ownership proof"
+                    }
                 }
                 VerificationUiState.Success -> {
-                    Toast.makeText(this, "Verification submitted successfully", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Verification submitted", Toast.LENGTH_SHORT).show()
                     finish()
-                }
-                is VerificationUiState.Error -> {
-                    submitButton.isEnabled = true
-                    uploadButton.isEnabled = true
-                    Toast.makeText(this, state.message, Toast.LENGTH_SHORT).show()
                 }
             }
         }

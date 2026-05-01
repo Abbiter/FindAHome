@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ghost_white"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/editProfileToolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/white"
+        app:navigationIcon="@drawable/ic_back_arrow" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Personal"
+                android:textColor="@color/midnight_navy"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etEditFullName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="Full name"
+                android:inputType="textPersonName|textCapWords"
+                android:minHeight="48dp" />
+
+            <EditText
+                android:id="@+id/etEditPhone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="Phone number"
+                android:inputType="phone"
+                android:minHeight="48dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Email (sign-in)"
+                android:textColor="@color/deep_royal_text"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvEditEmailReadonly"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingVertical="8dp"
+                android:textColor="@color/midnight_navy"
+                android:textSize="15sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPickProfilePhoto"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Change profile photo"
+                android:textAllCaps="false" />
+
+            <TextView
+                android:id="@+id/tvEditPhotoStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/deep_royal_text"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/labelStudentSection"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="Student"
+                android:textColor="@color/midnight_navy"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <EditText
+                android:id="@+id/etStudentInstitution"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Institution / university"
+                android:visibility="gone" />
+
+            <EditText
+                android:id="@+id/etStudentId"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Student ID"
+                android:visibility="gone" />
+
+            <EditText
+                android:id="@+id/etStudentPreferredLocation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Preferred location (optional)"
+                android:visibility="gone" />
+
+            <EditText
+                android:id="@+id/etStudentBudget"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Budget max (BWP / month, optional)"
+                android:inputType="numberDecimal"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPickEnrollmentProof"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Upload enrollment proof"
+                android:textAllCaps="false"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/labelProviderSection"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="Provider"
+                android:textColor="@color/midnight_navy"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <EditText
+                android:id="@+id/etProviderBusinessName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Business or owner name"
+                android:visibility="gone" />
+
+            <EditText
+                android:id="@+id/etProviderAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Contact address"
+                android:visibility="gone" />
+
+            <EditText
+                android:id="@+id/etProviderPropertyCount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Number of properties managed (optional)"
+                android:inputType="number"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPickOwnershipProof"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Upload ownership proof"
+                android:textAllCaps="false"
+                android:visibility="gone" />
+
+            <ProgressBar
+                android:id="@+id/pbEditProfile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSaveProfile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Save changes"
+                android:textAllCaps="false" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

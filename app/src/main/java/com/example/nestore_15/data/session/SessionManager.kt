@@ -4,10 +4,13 @@ import android.content.Context
 import com.example.nestore_15.data.model.User
 import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.preferences.UserPreferences
+import com.example.nestore_15.data.repository.toFirestoreMap
+import com.example.nestore_15.data.repository.toUserFromDocument
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -66,13 +69,7 @@ class SessionManager(
     fun getCurrentUser(): Flow<User?> = currentUserFlow
 
     suspend fun saveUser(user: User) {
-        val payload = hashMapOf(
-            "uid" to user.id,
-            "email" to user.email,
-            "role" to user.role.name,
-            "isVerified" to user.isVerified
-        )
-        firestore.collection("users").document(user.id).set(payload).await()
+        firestore.collection("users").document(user.id).set(user.toFirestoreMap(), SetOptions.merge()).await()
         userPreferences.saveUser(user)
     }
 
@@ -123,38 +120,15 @@ class SessionManager(
                     return@addSnapshotListener
                 }
 
-                if (snapshot == null || !snapshot.exists()) {
-                    trySend(
-                        User(
-                            id = firebaseUser.uid,
-                            email = firebaseUser.email.orEmpty(),
-                            role = UserRole.STUDENT,
-                            isVerified = false
-                        )
-                    ).isSuccess
+                if (snapshot == null) {
+                    trySend(null).isSuccess
                     return@addSnapshotListener
                 }
-
-                val email = snapshot.getString("email") ?: firebaseUser.email.orEmpty()
-                val roleName = snapshot.getString("role")
-                val isVerified = snapshot.getBoolean("isVerified") ?: false
-                val role = roleName.toUserRoleOrDefault()
-
-                trySend(
-                    User(
-                        id = firebaseUser.uid,
-                        email = email,
-                        role = role,
-                        isVerified = isVerified
-                    )
-                ).isSuccess
+                trySend(snapshot.toUserFromDocument(firebaseUser)).isSuccess
             }
 
             awaitClose { registration.remove() }
         }
     }
 
-    private fun String?.toUserRoleOrDefault(): UserRole {
-        return runCatching { UserRole.valueOf(this ?: "") }.getOrDefault(UserRole.STUDENT)
-    }
 }

@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/ghost_white"
     android:orientation="vertical">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/secondaryToolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@android:color/transparent" />
+        android:background="@color/white"
+        app:navigationIcon="@drawable/ic_back_arrow" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -37,19 +40,22 @@
             android:layout_marginTop="12dp"
             android:text="No document uploaded yet" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/uploadDocumentBtn"
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="Upload Document" />
+            android:text="Upload document"
+            android:textAllCaps="false" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/submitVerificationBtn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="Submit Verification" />
+            android:text="Submit for review"
+            android:textAllCaps="false" />
 
     </LinearLayout>
 </LinearLayout>
