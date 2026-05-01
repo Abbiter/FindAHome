@@ -142,16 +142,6 @@
                 android:textColor="@color/deep_royal_text"
                 android:textSize="13sp" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnGenerateTestListing"
-                style="@style/Widget.Nestore.Button.Outlined"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="Generate Test Listing"
-                android:textAllCaps="false"
-                android:visibility="gone" />
-
             <ProgressBar
                 android:id="@+id/pbPropertySave"
                 android:layout_width="wrap_content"

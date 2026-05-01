@@ -79,34 +79,6 @@ class RegisterViewModel(
         }
     }
 
-    fun submitDebugVerifiedRegistration(role: RegistrationRole) {
-        val ts = System.currentTimeMillis()
-        val fullName = if (role == RegistrationRole.STUDENT) "Debug Student" else "Debug Provider"
-        val phone = "71234567"
-        val emailPrefix = if (role == RegistrationRole.STUDENT) "debug.student" else "debug.provider"
-        val email = "$emailPrefix.$ts@findahome.test"
-        val password = "Password123!"
-
-        viewModelScope.launch {
-            authRepository.mockRegister(
-                fullName = fullName,
-                phone = phone,
-                email = email,
-                password = password,
-                role = role,
-                forceVerified = true
-            ).fold(
-                onSuccess = { user ->
-                    sessionManager.saveUser(user)
-                    _uiState.value = RegisterUiState.Success(user.role)
-                },
-                onFailure = { error ->
-                    _uiState.value = RegisterUiState.Error(error.message ?: "Debug registration failed")
-                }
-            )
-        }
-    }
-
     fun acknowledgeState() {
         _uiState.value = RegisterUiState.Idle
     }

@@ -30,8 +30,7 @@ class AuthRepository(
         email: String,
         password: String,
         role: RegistrationRole,
-        phone: String,
-        forceVerified: Boolean = false
+        phone: String
     ): Result<User> {
         return runCatching {
             val authResult = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
@@ -42,10 +41,10 @@ class AuthRepository(
                 id = firebaseUser.uid,
                 email = firebaseUser.email ?: email,
                 role = roleValue,
-                isVerified = forceVerified,
+                isVerified = false,
                 fullName = fullName.trim(),
                 phone = phone.trim(),
-                verificationStatus = if (forceVerified) VerificationStatus.VERIFIED else VerificationStatus.NOT_SUBMITTED
+                verificationStatus = VerificationStatus.NOT_SUBMITTED
             )
 
             firestore.collection("users").document(userProfile.id)
@@ -64,9 +63,8 @@ class AuthRepository(
         phone: String,
         email: String,
         password: String,
-        role: RegistrationRole,
-        forceVerified: Boolean = false
-    ): Result<User> = register(fullName, email, password, role, phone, forceVerified)
+        role: RegistrationRole
+    ): Result<User> = register(fullName, email, password, role, phone)
 
     private suspend fun fetchUserProfile(firebaseUser: FirebaseUser): User {
         val snapshot = firestore.collection("users").document(firebaseUser.uid).get().await()
