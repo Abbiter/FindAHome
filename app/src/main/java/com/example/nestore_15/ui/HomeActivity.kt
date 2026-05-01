@@ -117,6 +117,7 @@ class HomeActivity : AppCompatActivity() {
 
         val drawerLayout = findViewById<DrawerLayout>(R.id.drawerLayout)
         val navigationView = findViewById<NavigationView>(R.id.navView)
+        navigationView.bindPersonalizedDrawerHeader(lifecycleScope, sessionManager)
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
 

@@ -17,4 +17,6 @@
     <string name="notification_rationale">Allow notifications to get alerts when new listings match your saved location filter.</string>
     <string name="notification_allow">Allow</string>
     <string name="not_now">Not now</string>
+    <string name="nav_welcome_named">Welcome, %1$s</string>
+    <string name="nav_welcome_generic">Welcome</string>
 </resources>

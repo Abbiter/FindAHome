@@ -47,6 +47,15 @@ data class User(
     }
 
     fun displayNameOrEmail(): String = fullName.ifBlank { email.ifBlank { "User" } }
+
+    /** First token of [fullName] for “Welcome, …”; else email local-part; else neutral fallback. */
+    fun greetingName(): String {
+        val first = fullName.trim().split(Regex("\\s+")).firstOrNull { it.isNotEmpty() }
+        if (first != null) return first
+        val local = email.substringBefore('@').trim()
+        if (local.isNotEmpty()) return local
+        return "there"
+    }
 }
 
 enum class UserRole {

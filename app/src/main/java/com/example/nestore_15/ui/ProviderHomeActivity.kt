@@ -104,6 +104,7 @@ class ProviderHomeActivity : AppCompatActivity() {
         listingsAdapter = ProviderListingPreviewAdapter(::openListingDetails)
         val drawerLayout = findViewById<DrawerLayout>(R.id.providerDrawerLayout)
         val navigationView = findViewById<NavigationView>(R.id.providerNavView)
+        navigationView.bindPersonalizedDrawerHeader(lifecycleScope, sessionManager)
         val recyclerView = findViewById<RecyclerView>(R.id.rvProviderListingsPreview)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = listingsAdapter
