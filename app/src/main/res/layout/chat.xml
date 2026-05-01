@@ -16,6 +16,34 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <LinearLayout
+            android:id="@+id/propertyContextBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/ivChatPropertyThumb"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:contentDescription="@string/app_name"
+                android:scaleType="centerCrop" />
+
+            <TextView
+                android:id="@+id/tvChatPropertyTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textColor="@color/midnight_navy"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/messagesRecyclerView"
             android:layout_width="match_parent"

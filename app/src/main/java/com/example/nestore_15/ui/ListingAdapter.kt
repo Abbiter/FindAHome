@@ -16,7 +16,8 @@ import java.util.Locale
 
 class ListingAdapter(
     private val onReserveClick: (Listing) -> Unit,
-    private val onInquireClick: (Listing) -> Unit
+    private val onInquireClick: (Listing) -> Unit,
+    private val onOpenDetail: (Listing) -> Unit
 ) :
     RecyclerView.Adapter<ListingAdapter.ViewHolder>() {
 
@@ -67,6 +68,9 @@ class ListingAdapter(
         }
         holder.btnInquire.setOnClickListener {
             if (!blocked) onInquireClick(item)
+        }
+        holder.itemView.setOnClickListener {
+            onOpenDetail(item)
         }
     }
 

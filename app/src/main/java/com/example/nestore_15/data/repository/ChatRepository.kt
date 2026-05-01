@@ -1,6 +1,7 @@
 package com.example.nestore_15.data.repository
 
 import com.example.nestore_15.data.model.ChatMessage
+import com.example.nestore_15.data.model.ConversationSummary
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -14,35 +15,43 @@ class ChatRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
 
-    suspend fun getOrCreateChat(
-        listingId: String,
-        currentUserId: String,
-        ownerId: String
+    suspend fun getOrCreateConversation(
+        propertyId: String,
+        propertyTitle: String,
+        propertyImageUrl: String,
+        studentId: String,
+        providerId: String
     ): String {
-        val participants = listOf(currentUserId, ownerId).sorted()
-        val chatId = "${listingId}_${participants[0]}_${participants[1]}"
-        val chatRef = firestore.collection("chats").document(chatId)
+        val participants = listOf(studentId, providerId).sorted()
+        val conversationId = "${propertyId}_${participants[0]}_${participants[1]}"
+        val ref = firestore.collection("conversations").document(conversationId)
+        val existing = ref.get().await()
+        if (existing.exists()) return conversationId
 
-        firestore.runTransaction { transaction ->
-            val snapshot = transaction.get(chatRef)
-            if (!snapshot.exists()) {
-                transaction.set(
-                    chatRef,
-                    mapOf(
-                        "chatId" to chatId,
-                        "participants" to participants,
-                        "listingId" to listingId
-                    )
-                )
-            }
-        }.await()
+        val studentName = fetchUserDisplayName(studentId, fallback = "Student")
+        val providerName = fetchUserDisplayName(providerId, fallback = "Provider")
 
-        return chatId
+        ref.set(
+            mapOf(
+                "participants" to participants,
+                "studentId" to studentId,
+                "providerId" to providerId,
+                "studentName" to studentName,
+                "providerName" to providerName,
+                "propertyId" to propertyId,
+                "propertyTitle" to propertyTitle,
+                "propertyImageUrl" to propertyImageUrl,
+                "lastMessage" to "",
+                "lastUpdated" to FieldValue.serverTimestamp(),
+                "createdAt" to FieldValue.serverTimestamp()
+            )
+        ).await()
+        return conversationId
     }
 
-    fun observeMessages(chatId: String): Flow<List<ChatMessage>> = callbackFlow {
-        val registration: ListenerRegistration = firestore.collection("chats")
-            .document(chatId)
+    fun observeMessages(conversationId: String): Flow<List<ChatMessage>> = callbackFlow {
+        val registration: ListenerRegistration = firestore.collection("conversations")
+            .document(conversationId)
             .collection("messages")
             .orderBy("timestamp")
             .addSnapshotListener { snapshot, error ->
@@ -68,9 +77,9 @@ class ChatRepository(
         awaitClose { registration.remove() }
     }
 
-    suspend fun sendMessage(chatId: String, senderId: String, message: String) {
-        firestore.collection("chats")
-            .document(chatId)
+    suspend fun sendMessage(conversationId: String, senderId: String, message: String) {
+        val conversationRef = firestore.collection("conversations").document(conversationId)
+        conversationRef
             .collection("messages")
             .add(
                 mapOf(
@@ -80,5 +89,66 @@ class ChatRepository(
                 )
             )
             .await()
+        conversationRef.update(
+            mapOf(
+                "lastMessage" to message,
+                "lastUpdated" to FieldValue.serverTimestamp()
+            )
+        ).await()
+    }
+
+    fun observeConversations(currentUserId: String): Flow<List<ConversationSummary>> = callbackFlow {
+        val registration = firestore.collection("conversations")
+            .whereArrayContains("participants", currentUserId)
+            .orderBy("lastUpdated")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                val rows = snapshot?.documents.orEmpty().mapNotNull { doc ->
+                    ConversationSummary(
+                        id = doc.id,
+                        propertyId = doc.getString("propertyId").orEmpty(),
+                        propertyTitle = doc.getString("propertyTitle").orEmpty(),
+                        propertyImageUrl = doc.getString("propertyImageUrl").orEmpty(),
+                        participants = doc.get("participants") as? List<String> ?: emptyList(),
+                        studentId = doc.getString("studentId").orEmpty(),
+                        providerId = doc.getString("providerId").orEmpty(),
+                        studentName = doc.getString("studentName").orEmpty(),
+                        providerName = doc.getString("providerName").orEmpty(),
+                        lastMessage = doc.getString("lastMessage").orEmpty(),
+                        lastUpdated = (doc.getTimestamp("lastUpdated") ?: Timestamp.now()).toDate().time
+                    )
+                }.sortedByDescending { it.lastUpdated }
+                trySend(rows).isSuccess
+            }
+        awaitClose { registration.remove() }
+    }
+
+    suspend fun getConversation(conversationId: String): ConversationSummary? {
+        val doc = firestore.collection("conversations").document(conversationId).get().await()
+        if (!doc.exists()) return null
+        return ConversationSummary(
+            id = doc.id,
+            propertyId = doc.getString("propertyId").orEmpty(),
+            propertyTitle = doc.getString("propertyTitle").orEmpty(),
+            propertyImageUrl = doc.getString("propertyImageUrl").orEmpty(),
+            participants = doc.get("participants") as? List<String> ?: emptyList(),
+            studentId = doc.getString("studentId").orEmpty(),
+            providerId = doc.getString("providerId").orEmpty(),
+            studentName = doc.getString("studentName").orEmpty(),
+            providerName = doc.getString("providerName").orEmpty(),
+            lastMessage = doc.getString("lastMessage").orEmpty(),
+            lastUpdated = (doc.getTimestamp("lastUpdated") ?: Timestamp.now()).toDate().time
+        )
+    }
+
+    private suspend fun fetchUserDisplayName(userId: String, fallback: String): String {
+        val doc = firestore.collection("users").document(userId).get().await()
+        val fullName = doc.getString("fullName").orEmpty().trim()
+        if (fullName.isNotEmpty()) return fullName
+        val email = doc.getString("email").orEmpty()
+        return email.substringBefore("@").takeIf { it.isNotBlank() } ?: fallback
     }
 }

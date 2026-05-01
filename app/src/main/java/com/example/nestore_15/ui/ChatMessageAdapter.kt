@@ -1,11 +1,16 @@
 package com.example.nestore_15.ui
 
 import android.view.LayoutInflater
+import android.view.Gravity
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.nestore_15.R
 import com.example.nestore_15.data.model.ChatMessage
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class ChatMessageAdapter(
     private val currentUserId: String
@@ -17,7 +22,9 @@ class ChatMessageAdapter(
         RecyclerView.ViewHolder(
             LayoutInflater.from(parent.context).inflate(R.layout.item_chat_message, parent, false)
         ) {
+        val container: LinearLayout = itemView.findViewById(R.id.messageContainer)
         val messageText: TextView = itemView.findViewById(R.id.messageText)
+        val messageTimestamp: TextView = itemView.findViewById(R.id.messageTimestamp)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
@@ -26,8 +33,18 @@ class ChatMessageAdapter(
 
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
         val item = items[position]
-        val prefix = if (item.senderId == currentUserId) "You: " else "Them: "
-        holder.messageText.text = prefix + item.message
+        val mine = item.senderId == currentUserId
+        holder.container.gravity = if (mine) Gravity.END else Gravity.START
+        holder.messageText.text = item.message
+        holder.messageText.setBackgroundResource(
+            if (mine) R.drawable.bg_chat_bubble_sent else R.drawable.bg_chat_bubble_received
+        )
+        holder.messageText.setTextColor(
+            if (mine) holder.itemView.context.getColor(R.color.white)
+            else holder.itemView.context.getColor(R.color.midnight_navy)
+        )
+        holder.messageTimestamp.text =
+            SimpleDateFormat("dd MMM • HH:mm", Locale.getDefault()).format(Date(item.timestamp))
     }
 
     override fun getItemCount(): Int = items.size

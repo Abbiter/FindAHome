@@ -77,6 +77,12 @@
         <activity
             android:name=".ui.ChatActivity"
             android:exported="false" />
+        <activity
+            android:name=".ui.StudentListingDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.ConversationsActivity"
+            android:exported="false" />
 
     </application>
 

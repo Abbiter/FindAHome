@@ -136,7 +136,7 @@ class ProviderHomeActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.nav_home -> Unit
                 R.id.nav_saved -> startActivity(Intent(this, ProviderManageListingsActivity::class.java))
-                R.id.nav_chats -> startActivity(Intent(this, ProviderInquiriesActivity::class.java))
+                R.id.nav_chats -> startActivity(Intent(this, ConversationsActivity::class.java))
                 R.id.nav_profile -> startActivity(Intent(this, ProfileActivity::class.java))
                 R.id.nav_logout -> {
                     lifecycleScope.launch {

@@ -135,7 +135,7 @@ class HomeActivity : AppCompatActivity() {
         loadingProgress = findViewById(R.id.homeLoadingProgress)
         emptyStateText = findViewById(R.id.tvEmptyState)
         setupPropertyRecyclerView(recyclerView)
-        listingAdapter = ListingAdapter(::onReserveRequested, ::onInquireRequested)
+        listingAdapter = ListingAdapter(::onReserveRequested, ::onInquireRequested, ::openListingDetail)
         recyclerView.adapter = listingAdapter
 
         viewModel.uiState.observe(this) { state ->
@@ -152,7 +152,7 @@ class HomeActivity : AppCompatActivity() {
                     viewModel.loadListings()
                 }
                 R.id.nav_chats -> {
-                    Toast.makeText(this, "Long-press a listing to chat with owner", Toast.LENGTH_SHORT).show()
+                    startActivity(Intent(this, ConversationsActivity::class.java))
                 }
                 R.id.nav_saved -> {
                     // TODO: Navigate to saved listings when favorites persistence is implemented
@@ -334,33 +334,29 @@ class HomeActivity : AppCompatActivity() {
         )
     }
 
-    private fun onChatRequested(listing: com.example.nestore_15.data.model.Listing) {
-        lifecycleScope.launch {
-            val isLoggedIn = sessionManager.isLoggedIn.first()
-            if (!isLoggedIn) {
-                Toast.makeText(this@HomeActivity, "Please log in to continue", Toast.LENGTH_SHORT).show()
-                return@launch
+    private fun openListingDetail(listing: com.example.nestore_15.data.model.Listing) {
+        startActivity(
+            Intent(this, StudentListingDetailActivity::class.java).apply {
+                putExtra(StudentListingDetailActivity.EXTRA_PROPERTY_ID, listing.id)
+                putExtra(StudentListingDetailActivity.EXTRA_PROVIDER_ID, listing.ownerId)
+                putExtra(StudentListingDetailActivity.EXTRA_PROPERTY_TITLE, listing.title)
+                putExtra(StudentListingDetailActivity.EXTRA_PROPERTY_IMAGE_URL, listing.imageUrl)
+                putExtra(
+                    StudentListingDetailActivity.EXTRA_PROPERTY_PRICE,
+                    getString(R.string.listing_price_monthly, formatPrice(listing.priceBwp))
+                )
+                putExtra(StudentListingDetailActivity.EXTRA_PROPERTY_LOCATION, listing.location)
+                putExtra(
+                    StudentListingDetailActivity.EXTRA_PROPERTY_AVAILABILITY,
+                    getString(R.string.listing_available_on, listing.availabilityDate)
+                )
             }
+        )
+    }
 
-            val currentUserId = sessionManager.getCurrentUserId()
-            if (currentUserId.isNullOrBlank()) {
-                Toast.makeText(this@HomeActivity, "Please log in to continue", Toast.LENGTH_SHORT).show()
-                return@launch
-            }
-
-            if (listing.ownerId == currentUserId) {
-                Toast.makeText(this@HomeActivity, "You cannot chat with yourself", Toast.LENGTH_SHORT).show()
-                return@launch
-            }
-
-            startActivity(
-                Intent(this@HomeActivity, ChatActivity::class.java).apply {
-                    putExtra(ChatActivity.EXTRA_LISTING_ID, listing.id)
-                    putExtra(ChatActivity.EXTRA_OWNER_ID, listing.ownerId)
-                    putExtra(ChatActivity.EXTRA_CURRENT_USER_ID, currentUserId)
-                }
-            )
-        }
+    private fun formatPrice(price: Double): String {
+        return if (price % 1.0 == 0.0) price.toInt().toString()
+        else String.format(java.util.Locale.getDefault(), "%.2f", price)
     }
 
     private fun setupSearchFilter() {

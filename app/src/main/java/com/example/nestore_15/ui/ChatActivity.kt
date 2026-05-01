@@ -1,8 +1,11 @@
 package com.example.nestore_15.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -10,23 +13,23 @@ import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.nestore_15.R
-import com.example.nestore_15.data.repository.ChatRepository
 import com.example.nestore_15.viewmodel.ChatUiState
 import com.example.nestore_15.viewmodel.ChatViewModel
 import kotlinx.coroutines.launch
 
 class ChatActivity : AppCompatActivity() {
 
-    private val chatRepository = ChatRepository()
-    private val viewModel: ChatViewModel by viewModels { ChatViewModel.factory(chatRepository) }
+    private val viewModel: ChatViewModel by viewModels { ChatViewModel.factory() }
     private lateinit var messagesRecyclerView: RecyclerView
     private lateinit var messageInput: EditText
     private lateinit var sendButton: Button
     private lateinit var adapter: ChatMessageAdapter
 
-    private var chatId: String = ""
+    private var conversationId: String = ""
     private var currentUserId: String = ""
+    private var returnToProperty: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,10 +37,14 @@ class ChatActivity : AppCompatActivity() {
         setupBackNavigation()
 
         currentUserId = intent.getStringExtra(EXTRA_CURRENT_USER_ID).orEmpty()
-        val listingId = intent.getStringExtra(EXTRA_LISTING_ID).orEmpty()
-        val ownerId = intent.getStringExtra(EXTRA_OWNER_ID).orEmpty()
+        val providedConversationId = intent.getStringExtra(EXTRA_CONVERSATION_ID).orEmpty()
+        val propertyId = intent.getStringExtra(EXTRA_PROPERTY_ID).orEmpty()
+        val propertyTitle = intent.getStringExtra(EXTRA_PROPERTY_TITLE).orEmpty()
+        val propertyImageUrl = intent.getStringExtra(EXTRA_PROPERTY_IMAGE_URL).orEmpty()
+        val providerId = intent.getStringExtra(EXTRA_OWNER_ID).orEmpty()
+        returnToProperty = intent.getBooleanExtra(EXTRA_RETURN_TO_PROPERTY, false)
 
-        if (currentUserId.isEmpty() || listingId.isEmpty() || ownerId.isEmpty()) {
+        if (currentUserId.isEmpty()) {
             Toast.makeText(this, "Missing chat details", Toast.LENGTH_SHORT).show()
             finish()
             return
@@ -51,24 +58,28 @@ class ChatActivity : AppCompatActivity() {
         messagesRecyclerView.layoutManager = LinearLayoutManager(this)
         messagesRecyclerView.adapter = adapter
 
+        findViewById<TextView>(R.id.tvChatPropertyTitle).text = propertyTitle.ifBlank { "Property conversation" }
+        Glide.with(this)
+            .load(propertyImageUrl)
+            .placeholder(R.drawable.ic_launcher_background)
+            .error(R.drawable.ic_launcher_background)
+            .centerCrop()
+            .into(findViewById<ImageView>(R.id.ivChatPropertyThumb))
+
         lifecycleScope.launch {
-            runCatching {
-                chatId = chatRepository.getOrCreateChat(
-                    listingId = listingId,
-                    currentUserId = currentUserId,
-                    ownerId = ownerId
-                )
-            }.onSuccess {
-                viewModel.observeMessages(chatId)
-            }.onFailure {
-                Toast.makeText(this@ChatActivity, "Unable to open chat", Toast.LENGTH_SHORT).show()
+            if (providedConversationId.isNotBlank()) {
+                conversationId = providedConversationId
+            } else {
+                Toast.makeText(this@ChatActivity, "Conversation not found", Toast.LENGTH_SHORT).show()
                 finish()
+                return@launch
             }
+            viewModel.observeMessages(conversationId)
         }
 
         sendButton.setOnClickListener {
-            if (chatId.isBlank()) return@setOnClickListener
-            viewModel.sendMessage(chatId, currentUserId, messageInput.text.toString())
+            if (conversationId.isBlank()) return@setOnClickListener
+            viewModel.sendMessage(conversationId, currentUserId, messageInput.text.toString())
             messageInput.text?.clear()
         }
 
@@ -91,14 +102,55 @@ class ChatActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowTitleEnabled(false)
-        toolbar.setNavigationOnClickListener {
-            onBackPressedDispatcher.onBackPressed()
+        toolbar.setNavigationOnClickListener { navigateUp() }
+    }
+
+    override fun onBackPressed() {
+        navigateUp()
+    }
+
+    private fun navigateUp() {
+        val propertyId = intent.getStringExtra(EXTRA_PROPERTY_ID).orEmpty()
+        val providerId = intent.getStringExtra(EXTRA_OWNER_ID).orEmpty()
+        val propertyTitle = intent.getStringExtra(EXTRA_PROPERTY_TITLE).orEmpty()
+        val propertyImageUrl = intent.getStringExtra(EXTRA_PROPERTY_IMAGE_URL).orEmpty()
+        val propertyLocation = intent.getStringExtra(EXTRA_PROPERTY_LOCATION).orEmpty()
+        val propertyPrice = intent.getStringExtra(EXTRA_PROPERTY_PRICE).orEmpty()
+        val propertyAvailability = intent.getStringExtra(EXTRA_PROPERTY_AVAILABILITY).orEmpty()
+
+        if (returnToProperty && propertyId.isNotBlank()) {
+            startActivity(
+                Intent(this, StudentListingDetailActivity::class.java).apply {
+                    putExtra(StudentListingDetailActivity.EXTRA_PROPERTY_ID, propertyId)
+                    putExtra(StudentListingDetailActivity.EXTRA_PROVIDER_ID, providerId)
+                    putExtra(StudentListingDetailActivity.EXTRA_PROPERTY_TITLE, propertyTitle)
+                    putExtra(StudentListingDetailActivity.EXTRA_PROPERTY_IMAGE_URL, propertyImageUrl)
+                    putExtra(StudentListingDetailActivity.EXTRA_PROPERTY_LOCATION, propertyLocation)
+                    putExtra(StudentListingDetailActivity.EXTRA_PROPERTY_PRICE, propertyPrice)
+                    putExtra(StudentListingDetailActivity.EXTRA_PROPERTY_AVAILABILITY, propertyAvailability)
+                }
+            )
+            finish()
+            return
         }
+        if (!returnToProperty) {
+            startActivity(Intent(this, ConversationsActivity::class.java))
+            finish()
+            return
+        }
+        finish()
     }
 
     companion object {
-        const val EXTRA_LISTING_ID = "extra_listing_id"
+        const val EXTRA_CONVERSATION_ID = "extra_conversation_id"
+        const val EXTRA_PROPERTY_ID = "extra_property_id"
+        const val EXTRA_PROPERTY_TITLE = "extra_property_title"
+        const val EXTRA_PROPERTY_IMAGE_URL = "extra_property_image_url"
+        const val EXTRA_PROPERTY_LOCATION = "extra_property_location"
+        const val EXTRA_PROPERTY_PRICE = "extra_property_price"
+        const val EXTRA_PROPERTY_AVAILABILITY = "extra_property_availability"
         const val EXTRA_OWNER_ID = "extra_owner_id"
         const val EXTRA_CURRENT_USER_ID = "extra_current_user_id"
+        const val EXTRA_RETURN_TO_PROPERTY = "extra_return_to_property"
     }
 }
