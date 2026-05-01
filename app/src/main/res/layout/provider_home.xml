@@ -62,30 +62,39 @@
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
-                        <com.google.android.material.imageview.ShapeableImageView
-                            android:id="@+id/btnProviderProfileIcon"
+                        <FrameLayout
+                            android:layout_width="40dp"
+                            android:layout_height="40dp">
+
+                            <com.google.android.material.imageview.ShapeableImageView
+                                android:id="@+id/btnProviderProfileIcon"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:layout_gravity="center"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:src="@drawable/profile_placeholder"
+                                app:shapeAppearanceOverlay="@style/CircleImage" />
+
+                            <View
+                                android:id="@+id/viewProviderVerificationDot"
+                                android:layout_width="10dp"
+                                android:layout_height="10dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_marginEnd="1dp"
+                                android:layout_marginBottom="1dp"
+                                android:background="@drawable/status_dot_circle"
+                                android:contentDescription="@string/cd_verification_status" />
+                        </FrameLayout>
+
+                        <ImageView
+                            android:id="@+id/btnProviderNotifications"
                             android:layout_width="36dp"
                             android:layout_height="36dp"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:src="@drawable/profile_placeholder"
-                            app:shapeAppearanceOverlay="@style/CircleImage" />
-
-                        <View
-                            android:id="@+id/viewProviderVerificationDot"
-                            android:layout_width="8dp"
-                            android:layout_height="8dp"
-                            android:layout_marginStart="8dp"
-                            android:background="@drawable/status_dot_circle" />
-
-                        <TextView
-                            android:id="@+id/tvProviderVerificationStatus"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
-                            android:text="Verified"
-                            android:textColor="@color/white"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/cd_notifications"
+                            android:padding="6dp"
+                            android:src="@drawable/ic_notifications" />
                     </LinearLayout>
                 </LinearLayout>
             </androidx.appcompat.widget.Toolbar>

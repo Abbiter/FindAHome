@@ -42,6 +42,7 @@ data class User(
         if (isVerified) return VerificationStatus.VERIFIED
         if (verificationStatus == VerificationStatus.PENDING_REVIEW) return VerificationStatus.PENDING_REVIEW
         if (verificationDocumentUrl.isNotBlank()) return VerificationStatus.PENDING_REVIEW
+        if (providerOwnershipProofUrl.isNotBlank()) return VerificationStatus.PENDING_REVIEW
         return VerificationStatus.NOT_SUBMITTED
     }
 

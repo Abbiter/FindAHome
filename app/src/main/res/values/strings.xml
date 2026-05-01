@@ -9,4 +9,12 @@
     <string name="listing_available_on_sample">Available: 12 May</string>
     <string name="splash_retry">Retry</string>
     <string name="splash_connection_issue">Connection issue. %1$s</string>
+    <string name="cd_notifications">Alerts and notifications</string>
+    <string name="cd_verification_status">Account verification status</string>
+    <string name="verification_label_verified">Verified</string>
+    <string name="verification_label_pending">Pending review</string>
+    <string name="verification_label_not_submitted">Not submitted</string>
+    <string name="notification_rationale">Allow notifications to get alerts when new listings match your saved location filter.</string>
+    <string name="notification_allow">Allow</string>
+    <string name="not_now">Not now</string>
 </resources>

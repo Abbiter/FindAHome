@@ -1,12 +1,18 @@
 package com.example.nestore_15.ui
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.ImageView
+import androidx.activity.result.contract.ActivityResultContracts
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -14,6 +20,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -37,6 +44,21 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class HomeActivity : AppCompatActivity() {
+
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            Toast.makeText(this, "You’ll get alerts when new listings match your filters.", Toast.LENGTH_SHORT).show()
+        } else {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Notifications off")
+                .setMessage("You can enable them anytime in Settings.")
+                .setPositiveButton("Open settings") { _, _ -> openAppNotificationSettings() }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
+    }
 
     private val viewModel: HomeViewModel by viewModels { HomeViewModel.factory() }
     private val sessionManager by lazy { SessionManager(applicationContext) }
@@ -105,6 +127,7 @@ class HomeActivity : AppCompatActivity() {
             startActivity(Intent(this, ProfileActivity::class.java))
         }
         observeVerificationStatus()
+        setupNotificationEntry()
         setupSearchFilter()
 
         recyclerView = findViewById(R.id.propertyRecyclerView)
@@ -355,24 +378,64 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun observeVerificationStatus() {
-        val statusText = findViewById<TextView>(R.id.tvVerificationStatus)
         val statusDot = findViewById<View>(R.id.viewVerificationDot)
+        val a11yBase = getString(R.string.cd_verification_status)
 
         lifecycleScope.launch {
             sessionManager.getCurrentUser().collect { user ->
                 val (label, colorRes) = when {
-                    user == null -> "Not Verified" to R.color.status_not_verified_red
+                    user == null ->
+                        "Signed out" to R.color.verification_dot_neutral
                     user.effectiveVerificationStatus() == VerificationStatus.VERIFIED ->
-                        "Verified" to R.color.available_green
+                        getString(R.string.verification_label_verified) to R.color.available_green
                     user.effectiveVerificationStatus() == VerificationStatus.PENDING_REVIEW ->
-                        "Pending" to R.color.status_pending_orange
-                    else -> "Not Verified" to R.color.status_not_verified_red
+                        getString(R.string.verification_label_pending) to R.color.status_pending_orange
+                    else ->
+                        getString(R.string.verification_label_not_submitted) to R.color.verification_dot_neutral
                 }
-                statusText.text = label
                 val color = ContextCompat.getColor(this@HomeActivity, colorRes)
-                statusText.setTextColor(color)
                 statusDot.backgroundTintList = ColorStateList.valueOf(color)
+                statusDot.contentDescription = "$a11yBase: $label"
             }
         }
+    }
+
+    private fun setupNotificationEntry() {
+        findViewById<ImageView>(R.id.btnNotifications).setOnClickListener {
+            if (Build.VERSION.SDK_INT >= 33) {
+                when {
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+                        PackageManager.PERMISSION_GRANTED -> openAppNotificationSettings()
+                    ActivityCompat.shouldShowRequestPermissionRationale(
+                        this,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) -> {
+                        MaterialAlertDialogBuilder(this)
+                            .setMessage(R.string.notification_rationale)
+                            .setPositiveButton(R.string.notification_allow) { _, _ ->
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                            .setNegativeButton(R.string.not_now, null)
+                            .show()
+                    }
+                    else -> notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            } else {
+                openAppNotificationSettings()
+            }
+        }
+    }
+
+    private fun openAppNotificationSettings() {
+        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+            }
+        } else {
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", packageName, null)
+            }
+        }
+        runCatching { startActivity(intent) }
     }
 }

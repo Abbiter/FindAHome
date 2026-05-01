@@ -48,12 +48,28 @@
                         android:orientation="vertical"
                         android:padding="20dp">
 
-                        <com.google.android.material.imageview.ShapeableImageView
-                            android:id="@+id/ivProfileAvatar"
-                            android:layout_width="88dp"
-                            android:layout_height="88dp"
-                            android:scaleType="centerCrop"
-                            app:shapeAppearanceOverlay="@style/ShapeAppearance.MaterialComponents.MediumComponent" />
+                        <FrameLayout
+                            android:layout_width="96dp"
+                            android:layout_height="96dp">
+
+                            <com.google.android.material.imageview.ShapeableImageView
+                                android:id="@+id/ivProfileAvatar"
+                                android:layout_width="88dp"
+                                android:layout_height="88dp"
+                                android:layout_gravity="center"
+                                android:scaleType="centerCrop"
+                                app:shapeAppearanceOverlay="@style/ShapeAppearance.MaterialComponents.MediumComponent" />
+
+                            <View
+                                android:id="@+id/viewProfileHeaderVerificationDot"
+                                android:layout_width="12dp"
+                                android:layout_height="12dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_marginEnd="2dp"
+                                android:layout_marginBottom="2dp"
+                                android:background="@drawable/status_dot_circle"
+                                android:contentDescription="@string/cd_verification_status" />
+                        </FrameLayout>
 
                         <TextView
                             android:id="@+id/tvProfileDisplayName"
@@ -82,7 +98,8 @@
                             android:paddingVertical="6dp"
                             android:textColor="@color/white"
                             android:textSize="12sp"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"
+                            android:visibility="gone" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 

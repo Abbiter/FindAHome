@@ -1,6 +1,7 @@
 package com.example.nestore_15.ui
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.View
 import android.widget.ProgressBar
@@ -92,18 +93,19 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         val status = user.effectiveVerificationStatus()
-        val (badge, detail, hint) = verificationCopy(user, status)
-        findViewById<TextView>(R.id.tvProfileVerificationBadge).text = badge
+        val (_, detail, hint) = verificationCopy(user, status)
         findViewById<TextView>(R.id.tvProfileVerificationDetail).text = detail
         findViewById<TextView>(R.id.tvProfileVerificationHint).text = hint
 
-        val badgeColor = when (status) {
+        val headerDot = findViewById<View>(R.id.viewProfileHeaderVerificationDot)
+        val dotColorRes = when (status) {
             VerificationStatus.VERIFIED -> R.color.available_green
             VerificationStatus.PENDING_REVIEW -> R.color.status_pending_orange
-            VerificationStatus.NOT_SUBMITTED -> R.color.status_not_verified_red
+            VerificationStatus.NOT_SUBMITTED -> R.color.verification_dot_neutral
         }
-        val chip = findViewById<TextView>(R.id.tvProfileVerificationBadge)
-        chip.background.mutate().setTint(ContextCompat.getColor(this, badgeColor))
+        headerDot.backgroundTintList =
+            ColorStateList.valueOf(ContextCompat.getColor(this, dotColorRes))
+        headerDot.contentDescription = "${getString(R.string.cd_verification_status)}: $detail"
 
         val studentCard = findViewById<View>(R.id.cardStudentDetails)
         val providerCard = findViewById<View>(R.id.cardProviderDetails)
