@@ -11,7 +11,6 @@ import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.model.VerificationStatus
 import com.example.nestore_15.data.repository.UserRepository
 import com.example.nestore_15.data.session.SessionManager
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 sealed class VerificationUiState {
@@ -122,7 +121,7 @@ class VerificationViewModel(
 
     private fun loadCurrentUser() {
         viewModelScope.launch {
-            val user = sessionManager.getCurrentUser().first()
+            val user = sessionManager.awaitCurrentUser()
             if (user == null) {
                 _userMessage.value = "No active user session"
                 _uiState.value = VerificationUiState.Loading

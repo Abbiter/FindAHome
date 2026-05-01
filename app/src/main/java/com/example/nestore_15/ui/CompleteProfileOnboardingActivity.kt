@@ -19,7 +19,6 @@ import com.example.nestore_15.data.model.VerificationStatus
 import com.example.nestore_15.data.repository.UserRepository
 import com.example.nestore_15.data.session.SessionManager
 import com.google.android.material.button.MaterialButton
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -89,7 +88,8 @@ class CompleteProfileOnboardingActivity : AppCompatActivity() {
         saveBtn.isEnabled = false
 
         lifecycleScope.launch {
-            val base = sessionManager.getCurrentUser().first()
+            // StateFlow starts as null until auth + Firestore emit; .first() was always null here.
+            val base = sessionManager.awaitCurrentUser()
             if (base == null) {
                 Toast.makeText(this@CompleteProfileOnboardingActivity, "Session expired", Toast.LENGTH_SHORT).show()
                 goToLogin()
