@@ -25,6 +25,7 @@ class AuthRepository(
     }
 
     suspend fun register(
+        fullName: String,
         email: String,
         password: String,
         role: RegistrationRole,
@@ -40,6 +41,7 @@ class AuthRepository(
                 email = firebaseUser.email ?: email,
                 role = roleValue,
                 isVerified = false,
+                fullName = fullName.trim(),
                 phone = phone.trim()
             )
 
@@ -55,11 +57,12 @@ class AuthRepository(
     suspend fun mockLogin(email: String, password: String): Result<User> = login(email, password)
 
     suspend fun mockRegister(
+        fullName: String,
         phone: String,
         email: String,
         password: String,
         role: RegistrationRole
-    ): Result<User> = register(email, password, role, phone)
+    ): Result<User> = register(fullName, email, password, role, phone)
 
     private suspend fun fetchUserProfile(firebaseUser: FirebaseUser): User {
         val snapshot = firestore.collection("users").document(firebaseUser.uid).get().await()

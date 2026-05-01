@@ -104,15 +104,12 @@
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/loginBtn"
+                style="@style/Widget.Nestore.Button.PrimaryGradient"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginTop="36dp"
-                android:background="@drawable/btn_primary_gradient"
                 android:text="Login"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:textSize="16sp"
-                android:textStyle="bold"/>
+                android:textSize="16sp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -126,14 +123,10 @@
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/registerBtn"
+                style="@style/Widget.Nestore.Button.Secondary"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:background="@drawable/btn_secondary_outline"
-                android:text="Register"
-                android:textAllCaps="false"
-                android:textColor="@color/deep_royal_text"
-                android:textSize="16sp"
-                android:textStyle="bold"/>
+                android:text="Register" />
 
         </LinearLayout>
     </androidx.cardview.widget.CardView>

@@ -67,7 +67,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnInquiryPending"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+                style="@style/Widget.Nestore.Button.Outlined"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Pending"

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Primary actions: matches student hub (royal blue, bold, rounded) -->
+    <style name="Widget.Nestore.Button.Primary" parent="Widget.Material3.Button">
+        <item name="android:minHeight">52dp</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="backgroundTint">@color/royal_blue</item>
+        <item name="cornerRadius">28dp</item>
+        <item name="elevation">2dp</item>
+    </style>
+
+    <style name="Widget.Nestore.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">48dp</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">@color/royal_blue</item>
+        <item name="strokeColor">@color/royal_blue</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="cornerRadius">28dp</item>
+    </style>
+
+    <style name="Widget.Nestore.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">@color/royal_blue</item>
+    </style>
+
+    <!-- Secondary CTA (outline on light surfaces, matches login “Register”) -->
+    <style name="Widget.Nestore.Button.Secondary" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/btn_secondary_outline</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+        <item name="android:textColor">@color/deep_royal_text</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <!-- Hero CTA (registration): gradient fill -->
+    <style name="Widget.Nestore.Button.PrimaryGradient" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/btn_primary_gradient</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+</resources>

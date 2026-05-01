@@ -1,15 +1,15 @@
 package com.example.nestore_15.ui
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.Toolbar
 import com.example.nestore_15.R
-import android.content.Intent
 import com.example.nestore_15.data.model.RegistrationRole
 import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.session.SessionManager
@@ -24,12 +24,13 @@ class RegisterActivity : AppCompatActivity() {
         RegisterViewModel.factory(sessionManager = sessionManager)
     }
 
-    private lateinit var btnStudent: Button
-    private lateinit var btnProvider: Button
+    private lateinit var btnStudent: AppCompatButton
+    private lateinit var btnProvider: AppCompatButton
+    private lateinit var fullNameInput: EditText
     private lateinit var phoneInput: EditText
     private lateinit var emailInput: EditText
     private lateinit var passwordInput: EditText
-    private lateinit var createAccountBtn: Button
+    private lateinit var createAccountBtn: AppCompatButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +39,7 @@ class RegisterActivity : AppCompatActivity() {
 
         btnStudent = findViewById(R.id.btnStudent)
         btnProvider = findViewById(R.id.btnProvider)
+        fullNameInput = findViewById(R.id.fullNameInput)
         phoneInput = findViewById(R.id.phoneInput)
         emailInput = findViewById(R.id.emailInput)
         passwordInput = findViewById(R.id.passwordInput)
@@ -53,12 +55,8 @@ class RegisterActivity : AppCompatActivity() {
                 is RegisterUiState.Success -> {
                     clearFieldErrors()
                     viewModel.acknowledgeState()
-                    val destination = when (state.role) {
-                        UserRole.STUDENT -> HomeActivity::class.java
-                        UserRole.PROVIDER -> ProviderHomeActivity::class.java
-                    }
                     startActivity(
-                        Intent(this@RegisterActivity, destination).apply {
+                        Intent(this@RegisterActivity, CompleteProfileOnboardingActivity::class.java).apply {
                             putExtra(EXTRA_ROLE_OVERRIDE, state.role.name)
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                         }
@@ -78,6 +76,7 @@ class RegisterActivity : AppCompatActivity() {
         createAccountBtn.setOnClickListener {
             clearFieldErrors()
             viewModel.submitRegistration(
+                fullNameInput.text.toString(),
                 phoneInput.text.toString(),
                 emailInput.text.toString(),
                 passwordInput.text.toString()
@@ -103,12 +102,18 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun clearFieldErrors() {
+        fullNameInput.error = null
         phoneInput.error = null
         emailInput.error = null
         passwordInput.error = null
     }
 
     private fun renderValidationErrors(errors: RegisterFieldErrors) {
+        fullNameInput.error = when {
+            errors.fullNameRequired -> "Full name is required"
+            errors.fullNameTooShort -> "Enter at least 2 characters"
+            else -> null
+        }
         phoneInput.error = if (errors.phoneInvalid) "Enter a valid phone number (at least 8 digits)" else null
         emailInput.error = when {
             errors.emailRequired -> "Email is required"
@@ -129,13 +134,6 @@ class RegisterActivity : AppCompatActivity() {
         supportActionBar?.setDisplayShowTitleEnabled(false)
         toolbar.setNavigationOnClickListener {
             onBackPressedDispatcher.onBackPressed()
-        }
-    }
-
-    private fun RegistrationRole.toUserRole(): UserRole {
-        return when (this) {
-            RegistrationRole.STUDENT -> UserRole.STUDENT
-            RegistrationRole.HOME_PROVIDER -> UserRole.PROVIDER
         }
     }
 

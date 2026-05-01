@@ -69,17 +69,28 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/regTitle" />
 
+            <TextView
+                android:id="@+id/tvRegStepHint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Step 1 of 2 · Account"
+                android:textColor="@color/deep_royal_text"
+                android:textSize="13sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/regSubtitle" />
+
             <LinearLayout
                 android:id="@+id/roleSwitcher"
                 android:layout_width="0dp"
                 android:layout_height="56dp"
-                android:layout_marginTop="32dp"
+                android:layout_marginTop="20dp"
                 android:background="@drawable/input_glass_bg"
                 android:orientation="horizontal"
                 android:padding="4dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/regSubtitle">
+                app:layout_constraintTop_toBottomOf="@id/tvRegStepHint">
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btnStudent"
                     android:layout_width="0dp"
@@ -135,8 +146,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:layout_marginBottom="32dp"
-                        android:text="Enter your details to get started."
+                        android:layout_marginBottom="8dp"
+                        android:text="Enter your details. Fields marked * are required."
                         android:textColor="@color/deep_royal_text"
                         android:textSize="14sp" />
 
@@ -144,7 +155,28 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
-                        android:text="PHONE NUMBER"
+                        android:text="FULL NAME *"
+                        android:textColor="@color/deep_royal_text"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/fullNameInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="54dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/input_glass_bg"
+                        android:hint="e.g. Lesego Motswedi"
+                        android:inputType="textPersonName|textCapWords"
+                        android:paddingHorizontal="24dp"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="24dp"
+                        android:text="PHONE NUMBER *"
                         android:textColor="@color/deep_royal_text"
                         android:textSize="10sp"
                         android:textStyle="bold" />
@@ -167,7 +199,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
                         android:layout_marginTop="24dp"
-                        android:text="EMAIL ADDRESS"
+                        android:text="EMAIL ADDRESS *"
                         android:textColor="@color/deep_royal_text"
                         android:textSize="10sp"
                         android:textStyle="bold" />
@@ -188,7 +220,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
                         android:layout_marginTop="24dp"
-                        android:text="CREATE PASSWORD"
+                        android:text="CREATE PASSWORD *"
                         android:textColor="@color/deep_royal_text"
                         android:textSize="10sp"
                         android:textStyle="bold" />
@@ -206,15 +238,12 @@
 
                     <androidx.appcompat.widget.AppCompatButton
                         android:id="@+id/createAccountBtn"
+                        style="@style/Widget.Nestore.Button.PrimaryGradient"
                         android:layout_width="match_parent"
                         android:layout_height="60dp"
                         android:layout_marginTop="40dp"
-                        android:background="@drawable/btn_primary_gradient"
                         android:text="Create My Account"
-                        android:textAllCaps="false"
-                        android:textColor="@color/white"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:textSize="18sp" />
 
                     <TextView
                         android:layout_width="wrap_content"

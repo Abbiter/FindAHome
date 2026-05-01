@@ -12,6 +12,8 @@ import com.example.nestore_15.data.session.SessionManager
 import kotlinx.coroutines.launch
 
 data class RegisterFieldErrors(
+    val fullNameRequired: Boolean,
+    val fullNameTooShort: Boolean,
     val phoneInvalid: Boolean,
     val emailRequired: Boolean,
     val emailInvalid: Boolean,
@@ -40,12 +42,15 @@ class RegisterViewModel(
         _selectedRole.value = role
     }
 
-    fun submitRegistration(phone: String, email: String, password: String) {
+    fun submitRegistration(fullName: String, phone: String, email: String, password: String) {
+        val trimmedName = fullName.trim()
         val trimmedPhone = phone.trim()
         val trimmedEmail = email.trim()
         val trimmedPassword = password.trim()
 
         val fieldErrors = RegisterFieldErrors(
+            fullNameRequired = trimmedName.isEmpty(),
+            fullNameTooShort = trimmedName.isNotEmpty() && trimmedName.length < 2,
             phoneInvalid = !isValidPhone(trimmedPhone),
             emailRequired = trimmedEmail.isEmpty(),
             emailInvalid = trimmedEmail.isNotEmpty() && !Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches(),
@@ -60,7 +65,7 @@ class RegisterViewModel(
 
         val role = _selectedRole.value ?: RegistrationRole.STUDENT
         viewModelScope.launch {
-            authRepository.mockRegister(trimmedPhone, trimmedEmail, trimmedPassword, role).fold(
+            authRepository.mockRegister(trimmedName, trimmedPhone, trimmedEmail, trimmedPassword, role).fold(
                 onSuccess = { user ->
                     sessionManager.saveUser(user)
                     _uiState.value = RegisterUiState.Success(user.role)
@@ -83,7 +88,9 @@ class RegisterViewModel(
     }
 
     private fun hasValidationErrors(errors: RegisterFieldErrors): Boolean {
-        return errors.phoneInvalid ||
+        return errors.fullNameRequired ||
+            errors.fullNameTooShort ||
+            errors.phoneInvalid ||
             errors.emailRequired ||
             errors.emailInvalid ||
             errors.passwordRequired ||

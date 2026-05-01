@@ -36,6 +36,11 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".ui.CompleteProfileOnboardingActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".ui.HomeActivity"
             android:exported="false" />
         <activity
