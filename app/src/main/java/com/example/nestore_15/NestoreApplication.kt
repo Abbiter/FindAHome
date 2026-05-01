@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
 import android.util.Log
+import com.example.nestore_15.debug.DebugTools
 import com.example.nestore_15.notifications.ListingMatchNotifier
 import com.google.firebase.FirebaseApp
 
@@ -12,6 +13,7 @@ class NestoreApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        DebugTools.init(this)
         val app = FirebaseApp.initializeApp(this)
         if (app == null) {
             Log.w("NestoreApplication", "Firebase not configured yet. Add google-services.json.")

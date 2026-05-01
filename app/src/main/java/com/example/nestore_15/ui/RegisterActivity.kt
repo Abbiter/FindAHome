@@ -192,8 +192,11 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun setupHiddenDebugTrigger() {
+        DebugTools.ensureInitialized(applicationContext)
         if (!DebugTools.available) return
-        findViewById<TextView>(R.id.regTitle).setOnClickListener {
+        val title = findViewById<TextView>(R.id.regTitle)
+        title.isClickable = true
+        title.setOnClickListener {
             titleTapCount += 1
             if (titleTapCount >= 7) {
                 titleTapCount = 0
