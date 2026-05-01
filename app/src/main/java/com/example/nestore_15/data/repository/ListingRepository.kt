@@ -9,6 +9,7 @@ import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -21,7 +22,12 @@ class ListingRepository(
 ) {
 
     fun getAllListings(): Flow<List<Listing>> {
-        return listingsFlow(firestore.collection("listings"))
+        return combine(
+            listingsFlow(firestore.collection("listings")),
+            propertiesAsListingsFlow()
+        ) { legacy, fromProperties ->
+            mergeListings(legacy, fromProperties)
+        }
     }
 
     fun getFilteredListings(
@@ -45,7 +51,58 @@ class ListingRepository(
             query = query.whereEqualTo("location", locationFilter)
         }
 
-        return listingsFlow(query)
+        return combine(
+            listingsFlow(query),
+            propertiesAsListingsFlow()
+        ) { legacy, propertyRows ->
+            val filteredProperties = propertyRows.filter { listing ->
+                passesClientFilters(
+                    listing = listing,
+                    minPriceBwp = minPriceBwp,
+                    maxPriceBwp = maxPriceBwp,
+                    location = locationFilter,
+                    minAvailabilityDate = todayDateString()
+                )
+            }
+            mergeListings(legacy, filteredProperties)
+        }
+    }
+
+    private fun propertiesAsListingsFlow(): Flow<List<Listing>> = callbackFlow {
+        val registration: ListenerRegistration = firestore.collection("properties")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                val list = snapshot?.documents.orEmpty()
+                    .mapNotNull { it.toPropertyOrNull()?.toListing() }
+                trySend(list).isSuccess
+            }
+        awaitClose { registration.remove() }
+    }
+
+    private fun mergeListings(legacy: List<Listing>, fromProperties: List<Listing>): List<Listing> {
+        val byId = LinkedHashMap<String, Listing>()
+        legacy.forEach { byId[it.id] = it }
+        fromProperties.forEach { byId[it.id] = it }
+        return byId.values.sortedByDescending { it.availabilityDate }
+    }
+
+    private fun passesClientFilters(
+        listing: Listing,
+        minPriceBwp: Double?,
+        maxPriceBwp: Double?,
+        location: String?,
+        minAvailabilityDate: String
+    ): Boolean {
+        if (listing.availabilityDate < minAvailabilityDate) return false
+        if (minPriceBwp != null && listing.priceBwp < minPriceBwp) return false
+        if (maxPriceBwp != null && listing.priceBwp > maxPriceBwp) return false
+        if (!location.isNullOrBlank() && !listing.location.equals(location, ignoreCase = true)) {
+            return false
+        }
+        return true
     }
 
     private fun listingsFlow(query: Query): Flow<List<Listing>> = callbackFlow {
@@ -138,7 +195,8 @@ class ListingRepository(
             depositAmount = depositAmount,
             imageUrl = imageUrl,
             ownerId = ownerId,
-            isReserved = isReserved
+            isReserved = isReserved,
+            isPropertyListing = false
         )
     }
 

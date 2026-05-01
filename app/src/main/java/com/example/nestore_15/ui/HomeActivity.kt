@@ -28,8 +28,10 @@ import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.notifications.ListingMatchNotifier
 import com.example.nestore_15.viewmodel.HomeUiState
 import com.example.nestore_15.viewmodel.HomeViewModel
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -108,7 +110,7 @@ class HomeActivity : AppCompatActivity() {
         loadingProgress = findViewById(R.id.homeLoadingProgress)
         emptyStateText = findViewById(R.id.tvEmptyState)
         setupPropertyRecyclerView(recyclerView)
-        listingAdapter = ListingAdapter(::onReserveRequested)
+        listingAdapter = ListingAdapter(::onReserveRequested, ::onInquireRequested)
         recyclerView.adapter = listingAdapter
 
         viewModel.uiState.observe(this) { state ->
@@ -243,7 +245,7 @@ class HomeActivity : AppCompatActivity() {
                 }
 
                 viewModel.reserveListing(
-                    listingId = listing.id,
+                    listing = listing,
                     currentUserId = currentUserId
                 ) { result ->
                     result.onSuccess { reservationRef ->
@@ -256,6 +258,53 @@ class HomeActivity : AppCompatActivity() {
                         Toast.makeText(this, "Listing already reserved", Toast.LENGTH_SHORT).show()
                     }
                 }
+            }
+        )
+    }
+
+    private fun onInquireRequested(listing: com.example.nestore_15.data.model.Listing) {
+        guardRestrictedFeatureAccess(
+            onAccessGranted = {
+                val input = EditText(this)
+                input.hint = "Your message to the host"
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("Inquire about this home")
+                    .setView(input)
+                    .setPositiveButton("Send") { _, _ ->
+                        val message = input.text.toString().trim()
+                        if (message.isEmpty()) {
+                            Toast.makeText(this, "Please enter a message", Toast.LENGTH_SHORT).show()
+                            return@setPositiveButton
+                        }
+                        val studentId = sessionManager.getCurrentUserId()
+                        if (studentId.isNullOrBlank()) {
+                            Toast.makeText(this, "Please log in to continue", Toast.LENGTH_SHORT).show()
+                            return@setPositiveButton
+                        }
+                        val authUser = FirebaseAuth.getInstance().currentUser
+                        val rawName = authUser?.displayName?.takeIf { it.isNotBlank() }
+                            ?: authUser?.email?.substringBefore("@").orEmpty()
+                        val studentName = if (rawName.isBlank()) "Student" else rawName
+
+                        viewModel.submitInquiry(
+                            listing = listing,
+                            message = message,
+                            studentId = studentId,
+                            studentName = studentName
+                        ) { result ->
+                            result.onSuccess {
+                                Toast.makeText(this, "Inquiry sent", Toast.LENGTH_SHORT).show()
+                            }.onFailure {
+                                Toast.makeText(
+                                    this,
+                                    it.message ?: "Could not send inquiry",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
             }
         )
     }

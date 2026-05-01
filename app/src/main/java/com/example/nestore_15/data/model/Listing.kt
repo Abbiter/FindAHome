@@ -11,5 +11,7 @@ data class Listing(
     val depositAmount: Double,
     val imageUrl: String,
     val ownerId: String,
-    val isReserved: Boolean = false
+    val isReserved: Boolean = false,
+    /** True when this row comes from the Firestore `properties` collection (not legacy `listings`). */
+    val isPropertyListing: Boolean = false
 )

@@ -11,10 +11,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.nestore_15.data.model.Listing
 import com.bumptech.glide.Glide
 import com.example.nestore_15.R
+import com.google.android.material.button.MaterialButton
 import java.util.Locale
 
 class ListingAdapter(
-    private val onItemClick: (Listing) -> Unit
+    private val onReserveClick: (Listing) -> Unit,
+    private val onInquireClick: (Listing) -> Unit
 ) :
     RecyclerView.Adapter<ListingAdapter.ViewHolder>() {
 
@@ -27,6 +29,8 @@ class ListingAdapter(
         val availability: TextView = view.findViewById(R.id.listingAvailability)
         val statusBadge: TextView = view.findViewById(R.id.statusBadge)
         val image: ImageView = view.findViewById(R.id.listingImage)
+        val btnReserve: MaterialButton = view.findViewById(R.id.btnReserve)
+        val btnInquire: MaterialButton = view.findViewById(R.id.btnInquire)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -53,10 +57,16 @@ class ListingAdapter(
         holder.statusBadge.isVisible = item.isReserved
         holder.statusBadge.text = context.getString(R.string.listing_status_reserved)
 
-        holder.itemView.alpha = if (item.isReserved) 0.85f else 1f
-        holder.itemView.isEnabled = !item.isReserved
-        holder.itemView.setOnClickListener {
-            if (!item.isReserved) onItemClick(item)
+        val blocked = item.isReserved
+        holder.itemView.alpha = if (blocked) 0.85f else 1f
+        holder.btnReserve.isEnabled = !blocked
+        holder.btnInquire.isEnabled = !blocked
+
+        holder.btnReserve.setOnClickListener {
+            if (!blocked) onReserveClick(item)
+        }
+        holder.btnInquire.setOnClickListener {
+            if (!blocked) onInquireClick(item)
         }
     }
 

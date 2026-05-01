@@ -1,5 +1,7 @@
 package com.example.nestore_15.ui
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
@@ -15,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.lifecycleScope
 import com.example.nestore_15.R
+import com.example.nestore_15.data.model.Property
 import com.example.nestore_15.data.model.PropertyStatus
 import com.example.nestore_15.data.repository.PropertyRepository
 import com.example.nestore_15.data.session.ProviderSessionResult
@@ -22,40 +25,45 @@ import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.data.session.resolveProviderSession
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
-import android.content.Intent
-import android.net.Uri
 
-class ProviderAddPropertyActivity : AppCompatActivity() {
+class ProviderEditPropertyActivity : AppCompatActivity() {
 
     private val sessionManager by lazy { SessionManager(applicationContext) }
     private val propertyRepository = PropertyRepository()
-    private val selectedUris = mutableListOf<Uri>()
+    private val newImageUris = mutableListOf<Uri>()
+    private var loadedProperty: Property? = null
 
     private val pickImages = registerForActivityResult(PickMultipleVisualMedia(20)) { uris ->
-        selectedUris.clear()
-        selectedUris.addAll(uris)
-        updateImageCountLabel()
+        newImageUris.clear()
+        newImageUris.addAll(uris)
+        updateImageLabels()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val propertyId = intent.getStringExtra(EXTRA_PROPERTY_ID).orEmpty()
+        if (propertyId.isEmpty()) {
+            Toast.makeText(this, "Missing property", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
         lifecycleScope.launch {
             when (val gate = sessionManager.resolveProviderSession()) {
                 is ProviderSessionResult.Active -> {
                     setContentView(R.layout.provider_property_form)
-                    setupUi(gate.userId)
+                    setupToolbar()
+                    populateOrLoad(gate.userId, propertyId)
                 }
                 ProviderSessionResult.RedirectStudent -> {
-                    startActivity(
-                        Intent(this@ProviderAddPropertyActivity, HomeActivity::class.java).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                        }
-                    )
+                    startActivity(Intent(this@ProviderEditPropertyActivity, HomeActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    })
                     finish()
                 }
                 ProviderSessionResult.RedirectLogin -> {
                     startActivity(
-                        Intent(this@ProviderAddPropertyActivity, LoginActivity::class.java).apply {
+                        Intent(this@ProviderEditPropertyActivity, LoginActivity::class.java).apply {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                         }
                     )
@@ -65,20 +73,19 @@ class ProviderAddPropertyActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupUi(ownerId: String) {
-        findViewById<TextView>(R.id.tvPropertyFormHeading).text = "Add New Property"
-        findViewById<TextView>(R.id.tvExistingImageSummary).visibility = View.GONE
-
+    private fun setupToolbar() {
         val toolbar = findViewById<Toolbar>(R.id.secondaryToolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowTitleEnabled(false)
         toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
+    }
 
+    private fun populateOrLoad(ownerId: String, propertyId: String) {
+        findViewById<TextView>(R.id.tvPropertyFormHeading).text = "Edit Property"
         val sp = findViewById<Spinner>(R.id.spPropertyStatus)
         val labels = PropertyStatus.values().map { it.name }
         sp.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, labels)
-        sp.setSelection(0, false)
 
         findViewById<MaterialButton>(R.id.btnPickPropertyImages).setOnClickListener {
             pickImages.launch(
@@ -86,15 +93,51 @@ class ProviderAddPropertyActivity : AppCompatActivity() {
             )
         }
 
-        findViewById<MaterialButton>(R.id.btnSaveProperty).setOnClickListener {
-            saveProperty(ownerId)
+        val pb = findViewById<ProgressBar>(R.id.pbPropertySave)
+        pb.visibility = View.VISIBLE
+        findViewById<MaterialButton>(R.id.btnSaveProperty).isEnabled = false
+
+        lifecycleScope.launch {
+            val prop = propertyRepository.getProperty(propertyId)
+            pb.visibility = View.GONE
+            findViewById<MaterialButton>(R.id.btnSaveProperty).isEnabled = true
+
+            if (prop == null || prop.ownerId != ownerId) {
+                Toast.makeText(this@ProviderEditPropertyActivity, "Unable to load property", Toast.LENGTH_SHORT).show()
+                finish()
+                return@launch
+            }
+            loadedProperty = prop
+            bind(prop)
+            findViewById<MaterialButton>(R.id.btnSaveProperty).setOnClickListener {
+                saveChanges(ownerId, prop)
+            }
         }
-        updateImageCountLabel()
     }
 
-    private fun updateImageCountLabel() {
+    private fun bind(p: Property) {
+        findViewById<EditText>(R.id.etPropertyTitle).setText(p.title)
+        findViewById<EditText>(R.id.etPropertyDescription).setText(p.description)
+        findViewById<EditText>(R.id.etPropertyLocation).setText(p.location)
+        findViewById<EditText>(R.id.etPropertyPrice).setText(
+            if (p.priceBwp % 1.0 == 0.0) p.priceBwp.toInt().toString() else p.priceBwp.toString()
+        )
+        findViewById<EditText>(R.id.etPropertyRooms).setText(p.roomCount.toString())
+        findViewById<EditText>(R.id.etPropertyAvailabilityDate).setText(p.availabilityDate)
+
+        val sp = findViewById<Spinner>(R.id.spPropertyStatus)
+        sp.setSelection(PropertyStatus.values().indexOf(p.availabilityStatus).coerceAtLeast(0), false)
+
+        val summary = findViewById<TextView>(R.id.tvExistingImageSummary)
+        summary.visibility = View.VISIBLE
+        summary.text = "${p.imageUrls.size} existing photos on listing"
+
+        updateImageLabels()
+    }
+
+    private fun updateImageLabels() {
         findViewById<TextView>(R.id.tvSelectedImageCount).text =
-            "${selectedUris.size} photos selected"
+            "${newImageUris.size} new photos selected"
     }
 
     private fun readStatus(sp: Spinner): PropertyStatus {
@@ -102,7 +145,7 @@ class ProviderAddPropertyActivity : AppCompatActivity() {
         return PropertyStatus.values().getOrElse(idx) { PropertyStatus.AVAILABLE }
     }
 
-    private fun saveProperty(ownerId: String) {
+    private fun saveChanges(ownerId: String, original: Property) {
         val title = findViewById<EditText>(R.id.etPropertyTitle).text.toString().trim()
         val description = findViewById<EditText>(R.id.etPropertyDescription).text.toString().trim()
         val location = findViewById<EditText>(R.id.etPropertyLocation).text.toString().trim()
@@ -133,7 +176,8 @@ class ProviderAddPropertyActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             runCatching {
-                propertyRepository.createProperty(
+                propertyRepository.updateProperty(
+                    propertyId = original.id,
                     ownerId = ownerId,
                     title = title,
                     description = description,
@@ -142,20 +186,25 @@ class ProviderAddPropertyActivity : AppCompatActivity() {
                     roomCount = rooms,
                     availabilityStatus = status,
                     availabilityDate = date,
-                    imageUris = selectedUris.toList()
+                    existingImageUrls = original.imageUrls,
+                    newImageUris = newImageUris.toList()
                 )
             }.onSuccess {
-                Toast.makeText(this@ProviderAddPropertyActivity, "Property saved", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@ProviderEditPropertyActivity, "Property updated", Toast.LENGTH_SHORT).show()
                 finish()
             }.onFailure { e ->
                 Toast.makeText(
-                    this@ProviderAddPropertyActivity,
-                    e.message ?: "Could not save property",
+                    this@ProviderEditPropertyActivity,
+                    e.message ?: "Could not update property",
                     Toast.LENGTH_LONG
                 ).show()
             }
             pb.visibility = View.GONE
             btn.isEnabled = true
         }
+    }
+
+    companion object {
+        const val EXTRA_PROPERTY_ID = "extra_property_id"
     }
 }

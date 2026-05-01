@@ -6,7 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.nestore_15.data.model.Listing
+import com.example.nestore_15.data.repository.InquiryRepository
 import com.example.nestore_15.data.repository.ListingRepository
+import com.example.nestore_15.data.repository.PropertyRepository
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -17,7 +19,9 @@ sealed class HomeUiState {
 }
 
 class HomeViewModel(
-    private val listingRepository: ListingRepository
+    private val listingRepository: ListingRepository,
+    private val propertyRepository: PropertyRepository,
+    private val inquiryRepository: InquiryRepository
 ) : ViewModel() {
 
     private val _uiState = MutableLiveData<HomeUiState>(HomeUiState.Loading)
@@ -32,14 +36,40 @@ class HomeViewModel(
     }
 
     fun reserveListing(
-        listingId: String,
+        listing: Listing,
         currentUserId: String,
         onResult: (Result<String>) -> Unit
     ) {
         viewModelScope.launch {
             val result = runCatching {
-                listingRepository.reserveListing(listingId, currentUserId)
+                if (listing.isPropertyListing) {
+                    propertyRepository.reservePropertyAsRented(listing.id, currentUserId)
+                } else {
+                    listingRepository.reserveListing(listing.id, currentUserId)
+                }
             }
+            onResult(result)
+        }
+    }
+
+    fun submitInquiry(
+        listing: Listing,
+        message: String,
+        studentId: String,
+        studentName: String,
+        onResult: (Result<Unit>) -> Unit
+    ) {
+        viewModelScope.launch {
+            val result = runCatching {
+                inquiryRepository.createInquiry(
+                    propertyId = listing.id,
+                    propertyTitle = listing.title,
+                    providerId = listing.ownerId,
+                    studentId = studentId,
+                    studentName = studentName,
+                    message = message
+                )
+            }.map { }
             onResult(result)
         }
     }
@@ -58,11 +88,15 @@ class HomeViewModel(
     }
 
     companion object {
-        fun factory(listingRepository: ListingRepository = ListingRepository()): ViewModelProvider.Factory =
+        fun factory(
+            listingRepository: ListingRepository = ListingRepository(),
+            propertyRepository: PropertyRepository = PropertyRepository(),
+            inquiryRepository: InquiryRepository = InquiryRepository()
+        ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return HomeViewModel(listingRepository) as T
+                    return HomeViewModel(listingRepository, propertyRepository, inquiryRepository) as T
                 }
             }
     }

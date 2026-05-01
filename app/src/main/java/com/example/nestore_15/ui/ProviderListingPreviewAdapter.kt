@@ -31,7 +31,7 @@ class ProviderListingPreviewAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_listing, parent, false)
+            .inflate(R.layout.item_provider_listing_preview, parent, false)
         return ViewHolder(view)
     }
 

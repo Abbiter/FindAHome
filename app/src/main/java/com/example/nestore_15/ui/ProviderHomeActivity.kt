@@ -179,6 +179,8 @@ class ProviderHomeActivity : AppCompatActivity() {
                 )
                 putExtra(ProviderListingDetailActivity.EXTRA_STATUS, resolveListingStatusLabel(listing))
                 putExtra(ProviderListingDetailActivity.EXTRA_IMAGE_URL, listing.imageUrl)
+                putExtra(ProviderListingDetailActivity.EXTRA_PROPERTY_ID, listing.id)
+                putExtra(ProviderListingDetailActivity.EXTRA_IS_PROPERTY_LISTING, listing.isPropertyListing)
             }
         )
     }

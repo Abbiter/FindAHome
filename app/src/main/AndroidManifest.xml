@@ -45,6 +45,9 @@
             android:name=".ui.ProviderAddPropertyActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.ProviderEditPropertyActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.ProviderManageListingsActivity"
             android:exported="false" />
         <activity

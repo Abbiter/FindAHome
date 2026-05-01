@@ -13,27 +13,49 @@
         android:background="@color/white"
         app:navigationIcon="@drawable/ic_back_arrow" />
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp">
+        android:layout_height="match_parent">
 
-        <TextView
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvProviderInquiries"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:padding="12dp" />
+
+        <LinearLayout
+            android:id="@+id/providerInquiriesEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="No inquiries yet"
+                android:textColor="@color/midnight_navy"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="When students message you about a property, it will show up here."
+                android:textColor="@color/deep_royal_text"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/pbInquiries"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Bookings &amp; Inquiries"
-            android:textColor="@color/midnight_navy"
-            android:textSize="24sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Incoming booking and inquiry management will appear here."
-            android:textColor="@color/deep_royal_text"
-            android:textSize="14sp" />
-    </LinearLayout>
-
+            android:layout_gravity="center" />
+    </FrameLayout>
 </LinearLayout>
