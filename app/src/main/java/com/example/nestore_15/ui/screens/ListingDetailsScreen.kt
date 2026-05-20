@@ -57,7 +57,9 @@ data class ListingDetailsUi(
     val availabilityStatus: String,
     val isReserved: Boolean,
     val imageUrls: List<String>,
-    val ownerId: String
+    val ownerId: String,
+    val reservedByCurrentUser: Boolean = false,
+    val reservationRef: String = ""
 )
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -96,6 +98,15 @@ fun ListingDetailsScreen(
                     GallerySection(detail.imageUrls, detail.title)
                     Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
                         AvailabilityBadge(detail.availabilityStatus, detail.isReserved)
+                        if (detail.reservedByCurrentUser) {
+                            Text(
+                                "You reserved this property${if (detail.reservationRef.isNotBlank()) " · Ref ${detail.reservationRef}" else ""}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = FindAHomeColors.GreenAccent,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        }
                         Spacer(Modifier.height(12.dp))
                         Text(
                             detail.title,
@@ -129,10 +140,10 @@ fun ListingDetailsScreen(
                 }
                 Column(Modifier.padding(20.dp)) {
                     PrimaryOrangeButton(
-                        text = "Reserve Property",
+                        text = if (detail.reservedByCurrentUser) "Already reserved" else "Reserve Property",
                         onClick = { onReserveProperty(detail) },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = !detail.isReserved
+                        enabled = !detail.isReserved && !detail.reservedByCurrentUser
                     )
                     Spacer(Modifier.height(10.dp))
                     SecondaryGreenButton(

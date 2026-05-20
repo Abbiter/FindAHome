@@ -6,9 +6,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.nestore_15.data.model.Listing
+import com.example.nestore_15.data.preferences.ListingFilterPreferencesStore
 import com.example.nestore_15.data.repository.InquiryRepository
 import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.repository.PropertyRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -21,18 +24,21 @@ sealed class HomeUiState {
 class HomeViewModel(
     private val listingRepository: ListingRepository,
     private val propertyRepository: PropertyRepository,
-    private val inquiryRepository: InquiryRepository
+    private val inquiryRepository: InquiryRepository,
+    private val filterStore: ListingFilterPreferencesStore
 ) : ViewModel() {
 
     private val _uiState = MutableLiveData<HomeUiState>(HomeUiState.Loading)
     val uiState: LiveData<HomeUiState> = _uiState
 
+    private val searchQuery = MutableStateFlow("")
+
     init {
         observeListings()
     }
 
-    fun loadListings() {
-        _uiState.value = HomeUiState.Loading
+    fun setSearchQuery(query: String) {
+        searchQuery.value = query
     }
 
     fun reserveListing(
@@ -78,8 +84,20 @@ class HomeViewModel(
         _uiState.value = HomeUiState.Loading
         viewModelScope.launch {
             runCatching {
-                listingRepository.getAllListings().collectLatest { listings ->
-                    _uiState.value = HomeUiState.Success(listings)
+                combine(
+                    listingRepository.getBrowsableListings(),
+                    filterStore.preferencesFlow,
+                    searchQuery
+                ) { listings, prefs, search ->
+                    val query = search.trim().ifBlank { prefs.location.orEmpty() }
+                    listingRepository.applyBrowseFilters(
+                        listings = listings,
+                        minPriceBwp = prefs.minPriceBwp,
+                        maxPriceBwp = prefs.maxPriceBwp,
+                        locationQuery = query
+                    )
+                }.collectLatest { filtered ->
+                    _uiState.value = HomeUiState.Success(filtered)
                 }
             }.onFailure {
                 _uiState.value = HomeUiState.Error
@@ -91,12 +109,18 @@ class HomeViewModel(
         fun factory(
             listingRepository: ListingRepository = ListingRepository(),
             propertyRepository: PropertyRepository = PropertyRepository(),
-            inquiryRepository: InquiryRepository = InquiryRepository()
+            inquiryRepository: InquiryRepository = InquiryRepository(),
+            filterStore: ListingFilterPreferencesStore
         ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return HomeViewModel(listingRepository, propertyRepository, inquiryRepository) as T
+                    return HomeViewModel(
+                        listingRepository,
+                        propertyRepository,
+                        inquiryRepository,
+                        filterStore
+                    ) as T
                 }
             }
     }

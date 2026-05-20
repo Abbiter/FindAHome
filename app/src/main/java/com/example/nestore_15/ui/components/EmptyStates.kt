@@ -60,11 +60,15 @@ fun EmptyState(
 }
 
 @Composable
-fun FavoritesEmptyState(modifier: Modifier = Modifier) {
+fun FavoritesEmptyState(
+    modifier: Modifier = Modifier,
+    title: String = "No saved homes yet",
+    message: String = "Tap the heart on listings you love. Your favorites will appear here."
+) {
     EmptyState(
         icon = Icons.Outlined.FavoriteBorder,
-        title = "No saved homes yet",
-        message = "Tap the heart on listings you love. Your favorites will appear here.",
+        title = title,
+        message = message,
         modifier = modifier
     )
 }

@@ -52,12 +52,13 @@ private data class NavItem(
     val tab: StudentTab,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
-    val useGreenWhenSelected: Boolean = false
+    val useGreenWhenSelected: Boolean = false,
+    val labelOverride: String? = null
 )
 
 private val studentNavItems = listOf(
     NavItem(StudentTab.HOME, Icons.Filled.Home, Icons.Outlined.Home),
-    NavItem(StudentTab.FAVORITES, Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder, useGreenWhenSelected = true),
+    NavItem(StudentTab.FAVORITES, Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder, useGreenWhenSelected = true, labelOverride = "My Homes"),
     NavItem(StudentTab.MESSAGES, Icons.Filled.Chat, Icons.Outlined.Chat),
     NavItem(StudentTab.PROFILE, Icons.Filled.Person, Icons.Outlined.Person, useGreenWhenSelected = true)
 )
@@ -141,7 +142,7 @@ private fun NavBarItem(
             )
             if (selected) {
                 Text(
-                    item.tab.label,
+                    item.labelOverride ?: item.tab.label,
                     style = MaterialTheme.typography.labelSmall,
                     color = tint,
                     modifier = Modifier.padding(top = 2.dp)

@@ -14,6 +14,9 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.nestore_15.data.model.Listing
+import com.example.nestore_15.data.model.ListingFilterPreferences
+import com.example.nestore_15.data.preferences.AppNotificationStore
 import com.example.nestore_15.ui.screens.HomeScreen
 import com.example.nestore_15.ui.screens.ListingDetailsScreen
 import com.example.nestore_15.ui.screens.ListingDetailsUi
@@ -28,13 +31,17 @@ fun StudentNavHost(
     homeUiState: HomeUiState,
     searchQuery: String,
     onSearchChange: (String) -> Unit,
-    onSearchDone: () -> Unit,
+    filterPreferences: ListingFilterPreferences,
+    onApplyFilters: (minPrice: Double?, maxPrice: Double?, location: String?) -> Unit,
     verificationDotColor: Color,
     onNotifications: () -> Unit,
     onProfile: () -> Unit,
     onMapFab: () -> Unit,
     currentUserId: String?,
     onContactProvider: (ListingDetailsUi) -> Unit,
+    onToggleFavorite: (Listing) -> Unit,
+    savedListingIds: Set<String>,
+    notificationStore: AppNotificationStore,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -49,13 +56,16 @@ fun StudentNavHost(
                 uiState = homeUiState,
                 searchQuery = searchQuery,
                 onSearchChange = onSearchChange,
-                onSearchDone = onSearchDone,
+                filterPreferences = filterPreferences,
+                onApplyFilters = onApplyFilters,
                 verificationDotColor = verificationDotColor,
                 onNotifications = onNotifications,
                 onProfile = onProfile,
                 onListingClick = { listing ->
                     navController.navigate(StudentNavRoutes.listingDetails(listing.id))
                 },
+                onToggleFavorite = onToggleFavorite,
+                savedListingIds = savedListingIds,
                 onMapFab = onMapFab
             )
         }
@@ -66,15 +76,19 @@ fun StudentNavHost(
         ) { entry ->
             val listingId = entry.arguments?.getString("listingId").orEmpty()
             val detailViewModel: ListingDetailViewModel = viewModel(
-                factory = ListingDetailViewModel.factory(listingId)
+                factory = ListingDetailViewModel.factory(listingId, currentUserId)
             )
             val detailState by detailViewModel.uiState.collectAsState()
 
             ListingDetailsScreen(
                 uiState = detailState,
                 onBack = { navController.popBackStack() },
-                onReserveProperty = {
-                    navController.navigate(StudentNavRoutes.payment(listingId))
+                onReserveProperty = { detail ->
+                    if (detail.isReserved || detail.reservedByCurrentUser) {
+                        Toast.makeText(context, "This property is already reserved", Toast.LENGTH_SHORT).show()
+                    } else {
+                        navController.navigate(StudentNavRoutes.payment(listingId))
+                    }
                 },
                 onContactProvider = { detail ->
                     if (currentUserId.isNullOrBlank()) {
@@ -94,7 +108,7 @@ fun StudentNavHost(
         ) { entry ->
             val listingId = entry.arguments?.getString("listingId").orEmpty()
             val paymentViewModel: PaymentViewModel = viewModel(
-                factory = PaymentViewModel.factory(listingId)
+                factory = PaymentViewModel.factory(listingId, notificationStore)
             )
             val paymentState by paymentViewModel.uiState.collectAsState()
 

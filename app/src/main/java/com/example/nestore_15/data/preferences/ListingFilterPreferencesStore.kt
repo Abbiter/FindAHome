@@ -45,4 +45,17 @@ class ListingFilterPreferencesStore(private val context: Context) {
             }
         }
     }
+
+    suspend fun saveFilters(
+        minPriceBwp: Double?,
+        maxPriceBwp: Double?,
+        location: String?
+    ) {
+        context.filterDataStore.edit { prefs ->
+            if (minPriceBwp != null) prefs[Keys.minPrice] = minPriceBwp else prefs.remove(Keys.minPrice)
+            if (maxPriceBwp != null) prefs[Keys.maxPrice] = maxPriceBwp else prefs.remove(Keys.maxPrice)
+            val clean = location?.trim().orEmpty()
+            if (clean.isBlank()) prefs.remove(Keys.location) else prefs[Keys.location] = clean
+        }
+    }
 }

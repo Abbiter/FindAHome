@@ -8,28 +8,35 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.nestore_15.data.model.Listing
+import com.example.nestore_15.data.model.ListingFilterPreferences
 import com.example.nestore_15.ui.animation.listItemAnimation
 import com.example.nestore_15.ui.components.FindAHomeTopAppBar
 import com.example.nestore_15.ui.components.HeaderActionRow
@@ -45,14 +52,19 @@ fun HomeScreen(
     uiState: HomeUiState,
     searchQuery: String,
     onSearchChange: (String) -> Unit,
-    onSearchDone: () -> Unit,
+    filterPreferences: ListingFilterPreferences,
+    onApplyFilters: (minPrice: Double?, maxPrice: Double?, location: String?) -> Unit,
     verificationDotColor: Color,
     onNotifications: () -> Unit,
     onProfile: () -> Unit,
     onListingClick: (Listing) -> Unit,
+    onToggleFavorite: (Listing) -> Unit,
+    savedListingIds: Set<String>,
     onMapFab: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showFilterSheet by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -78,20 +90,26 @@ fun HomeScreen(
                 color = FindAHomeColors.PrimaryDarkBlue,
                 modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
             )
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = onSearchChange,
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search by location…") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                shape = InputShape,
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = FindAHomeColors.CardSurface,
-                    unfocusedContainerColor = FindAHomeColors.CardSurface,
-                    focusedBorderColor = FindAHomeColors.OrangeAccent
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchChange,
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Search by location…") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    shape = InputShape,
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = FindAHomeColors.CardSurface,
+                        unfocusedContainerColor = FindAHomeColors.CardSurface,
+                        focusedBorderColor = FindAHomeColors.OrangeAccent
+                    )
                 )
-            )
+                Spacer(Modifier.width(8.dp))
+                IconButton(onClick = { showFilterSheet = true }) {
+                    Icon(Icons.Default.FilterList, contentDescription = "Filter", tint = FindAHomeColors.PrimaryDarkBlue)
+                }
+            }
         }
 
         Box(Modifier.fillMaxSize()) {
@@ -105,7 +123,10 @@ fun HomeScreen(
                 }
                 is HomeUiState.Success -> {
                     if (uiState.listings.isEmpty()) {
-                        ListingsEmptyState(modifier = Modifier.align(Alignment.Center))
+                        ListingsEmptyState(
+                            modifier = Modifier.align(Alignment.Center),
+                            databaseEmpty = false
+                        )
                     } else {
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(2),
@@ -118,6 +139,8 @@ fun HomeScreen(
                                 PropertyCard(
                                     listing = listing,
                                     onClick = { onListingClick(listing) },
+                                    isFavorite = savedListingIds.contains(listing.id),
+                                    onToggleFavorite = { onToggleFavorite(listing) },
                                     modifier = Modifier.listItemAnimation(index)
                                 )
                             }
@@ -138,5 +161,13 @@ fun HomeScreen(
                 Icon(Icons.Default.Map, contentDescription = "Map")
             }
         }
+    }
+
+    if (showFilterSheet) {
+        ListingFilterSheet(
+            current = filterPreferences,
+            onDismiss = { showFilterSheet = false },
+            onApply = onApplyFilters
+        )
     }
 }

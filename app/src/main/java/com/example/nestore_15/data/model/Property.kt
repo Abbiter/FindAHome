@@ -23,6 +23,8 @@ data class Property(
     /** yyyy-MM-dd for filters / display */
     val availabilityDate: String,
     val imageUrls: List<String>,
+    val reservedBy: String = "",
+    val reservationRef: String = "",
     val createdAt: Long? = null,
     val updatedAt: Long? = null
 )

@@ -10,6 +10,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -27,6 +28,46 @@ class ListingRepository(
         ) { legacy, fromProperties ->
             mergeListings(legacy, fromProperties)
         }
+    }
+
+    /** Listings open for new reservations (excludes rented / reserved). */
+    fun getBrowsableListings(): Flow<List<Listing>> =
+        getAllListings().map { listings -> listings.filter { !it.isReserved } }
+
+    fun observeReservedByUser(userId: String): Flow<List<Listing>> = combine(
+        reservedLegacyListingsFlow(userId),
+        reservedPropertiesAsListingsFlow(userId)
+    ) { legacy, fromProperties ->
+        mergeListings(legacy, fromProperties)
+    }
+
+    private fun reservedPropertiesAsListingsFlow(userId: String): Flow<List<Listing>> = callbackFlow {
+        val registration: ListenerRegistration = firestore.collection("properties")
+            .whereEqualTo("reservedBy", userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(emptyList()).isSuccess
+                    return@addSnapshotListener
+                }
+                val list = snapshot?.documents.orEmpty()
+                    .mapNotNull { it.toPropertyOrNull()?.toListing() }
+                trySend(list).isSuccess
+            }
+        awaitClose { registration.remove() }
+    }
+
+    private fun reservedLegacyListingsFlow(userId: String): Flow<List<Listing>> = callbackFlow {
+        val registration: ListenerRegistration = firestore.collection("listings")
+            .whereEqualTo("reservedBy", userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(emptyList()).isSuccess
+                    return@addSnapshotListener
+                }
+                val listings = snapshot?.documents.orEmpty().mapNotNull { it.toListingOrNull() }
+                trySend(listings).isSuccess
+            }
+        awaitClose { registration.remove() }
     }
 
     fun getFilteredListings(
@@ -98,10 +139,32 @@ class ListingRepository(
         if (listing.availabilityDate < minAvailabilityDate) return false
         if (minPriceBwp != null && listing.priceBwp < minPriceBwp) return false
         if (maxPriceBwp != null && listing.priceBwp > maxPriceBwp) return false
-        if (!location.isNullOrBlank() && !listing.location.equals(location, ignoreCase = true)) {
-            return false
+        if (!location.isNullOrBlank()) {
+            val needle = location.trim()
+            if (!listing.location.contains(needle, ignoreCase = true)) return false
         }
         return true
+    }
+
+    fun applyBrowseFilters(
+        listings: List<Listing>,
+        minPriceBwp: Double?,
+        maxPriceBwp: Double?,
+        locationQuery: String?
+    ): List<Listing> {
+        val locationFilter = locationQuery?.trim().orEmpty()
+        return listings.filter { listing ->
+            if (listing.isReserved) return@filter false
+            if (listing.reservedBy.isNotBlank()) return@filter false
+            if (minPriceBwp != null && listing.priceBwp < minPriceBwp) return@filter false
+            if (maxPriceBwp != null && listing.priceBwp > maxPriceBwp) return@filter false
+            if (locationFilter.isNotEmpty() &&
+                !listing.location.contains(locationFilter, ignoreCase = true)
+            ) {
+                return@filter false
+            }
+            true
+        }
     }
 
     private fun listingsFlow(query: Query): Flow<List<Listing>> = callbackFlow {
@@ -197,6 +260,8 @@ class ListingRepository(
         val imageUrl = getString("imageUrl") ?: ""
         val isReserved = getBoolean("isReserved") ?: false
         val ownerId = getString("ownerId") ?: ""
+        val reservedBy = getString("reservedBy").orEmpty()
+        val reservationRef = getString("reservationRef").orEmpty()
 
         return Listing(
             id = id,
@@ -210,6 +275,8 @@ class ListingRepository(
             imageUrl = imageUrl,
             ownerId = ownerId,
             isReserved = isReserved,
+            reservedBy = reservedBy,
+            reservationRef = reservationRef,
             isPropertyListing = false
         )
     }

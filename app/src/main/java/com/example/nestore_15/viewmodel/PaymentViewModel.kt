@@ -4,8 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.nestore_15.data.model.Listing
+import com.example.nestore_15.data.model.NotificationType
+import com.example.nestore_15.data.preferences.AppNotificationStore
 import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.repository.PropertyRepository
+import com.example.nestore_15.data.model.PropertyStatus
 import com.example.nestore_15.data.repository.toListing
 import com.example.nestore_15.ui.screens.PaymentSummaryUi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +27,8 @@ sealed class PaymentUiState {
 class PaymentViewModel(
     private val listingId: String,
     private val propertyRepository: PropertyRepository,
-    private val listingRepository: ListingRepository
+    private val listingRepository: ListingRepository,
+    private val notificationStore: AppNotificationStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<PaymentUiState>(PaymentUiState.Loading)
@@ -70,11 +74,26 @@ class PaymentViewModel(
             if (current !is PaymentUiState.Form) return@launch
             _uiState.value = PaymentUiState.Loading
             val result = runCatching {
+                if (listing.isReserved) {
+                    throw IllegalStateException("This property is already reserved")
+                }
                 if (listing.isPropertyListing) {
+                    val property = propertyRepository.getProperty(listing.id)
+                    if (property?.availabilityStatus == PropertyStatus.RENTED) {
+                        throw IllegalStateException("This property is already reserved")
+                    }
+                }
+                val ref = if (listing.isPropertyListing) {
                     propertyRepository.reservePropertyAsRented(listing.id, currentUserId)
                 } else {
                     listingRepository.reserveListing(listing.id, currentUserId)
                 }
+                notificationStore.add(
+                    title = "Reservation confirmed",
+                    message = "${current.summary.title} in ${current.summary.location} — ref $ref",
+                    type = NotificationType.RESERVATION
+                )
+                ref
             }
             _uiState.value = result.fold(
                 onSuccess = { ref ->
@@ -99,14 +118,15 @@ class PaymentViewModel(
     }
 
     companion object {
-        fun factory(listingId: String): ViewModelProvider.Factory =
+        fun factory(listingId: String, notificationStore: AppNotificationStore): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return PaymentViewModel(
                         listingId = listingId,
                         propertyRepository = PropertyRepository(),
-                        listingRepository = ListingRepository()
+                        listingRepository = ListingRepository(),
+                        notificationStore = notificationStore
                     ) as T
                 }
             }

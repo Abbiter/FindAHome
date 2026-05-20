@@ -12,6 +12,11 @@ data class Listing(
     val imageUrl: String,
     val ownerId: String,
     val isReserved: Boolean = false,
+    val reservedBy: String = "",
+    val reservationRef: String = "",
     /** True when this row comes from the Firestore `properties` collection (not legacy `listings`). */
     val isPropertyListing: Boolean = false
-)
+) {
+    fun isReservedBy(userId: String): Boolean =
+        userId.isNotBlank() && reservedBy == userId
+}

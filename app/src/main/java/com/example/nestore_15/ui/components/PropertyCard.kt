@@ -3,6 +3,11 @@ package com.example.nestore_15.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +37,8 @@ fun PropertyCard(
     listing: Listing,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isFavorite: Boolean = false,
+    onToggleFavorite: (() -> Unit)? = null,
     priceLabel: (Double) -> String = { price ->
         val formatted = if (price % 1.0 == 0.0) price.toInt().toString()
         else String.format(Locale.getDefault(), "%.2f", price)
@@ -82,6 +89,18 @@ fun PropertyCard(
                         fontWeight = FontWeight.Bold,
                         color = FindAHomeColors.TextOnPrimary
                     )
+                }
+                if (onToggleFavorite != null) {
+                    IconButton(
+                        onClick = onToggleFavorite,
+                        modifier = Modifier.align(Alignment.TopStart)
+                    ) {
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                            contentDescription = "Save listing",
+                            tint = if (isFavorite) FindAHomeColors.OrangeAccent else FindAHomeColors.TextOnPrimary
+                        )
+                    }
                 }
             }
             Column(Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {

@@ -33,6 +33,8 @@ internal fun DocumentSnapshot.toPropertyOrNull(): Property? {
     val urls = (get("imageUrls") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
     val createdAt = getLong("createdAt")
     val updatedAt = getLong("updatedAt")
+    val reservedBy = getString("reservedBy").orEmpty()
+    val reservationRef = getString("reservationRef").orEmpty()
     return Property(
         id = id,
         ownerId = ownerId,
@@ -44,6 +46,8 @@ internal fun DocumentSnapshot.toPropertyOrNull(): Property? {
         availabilityStatus = status,
         availabilityDate = availabilityDate,
         imageUrls = urls,
+        reservedBy = reservedBy,
+        reservationRef = reservationRef,
         createdAt = createdAt,
         updatedAt = updatedAt
     )
@@ -70,6 +74,8 @@ fun Property.toListing(): Listing {
         imageUrl = imageUrls.firstOrNull().orEmpty(),
         ownerId = ownerId,
         isReserved = isRented,
+        reservedBy = reservedBy,
+        reservationRef = reservationRef,
         isPropertyListing = true
     )
 }
@@ -84,6 +90,20 @@ class PropertyRepository(
     fun observePropertiesByOwner(ownerId: String): Flow<List<Property>> = callbackFlow {
         val registration: ListenerRegistration = firestore.collection("properties")
             .whereEqualTo("ownerId", ownerId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(emptyList()).isSuccess
+                    return@addSnapshotListener
+                }
+                val list = snapshot?.documents.orEmpty().mapNotNull { it.toPropertyOrNull() }
+                trySend(list).isSuccess
+            }
+        awaitClose { registration.remove() }
+    }
+
+    fun observeReservedByUser(userId: String): Flow<List<Property>> = callbackFlow {
+        val registration: ListenerRegistration = firestore.collection("properties")
+            .whereEqualTo("reservedBy", userId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     trySend(emptyList()).isSuccess

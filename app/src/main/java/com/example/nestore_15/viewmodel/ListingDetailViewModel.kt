@@ -26,7 +26,8 @@ sealed class ListingDetailUiState {
 class ListingDetailViewModel(
     private val listingId: String,
     private val propertyRepository: PropertyRepository,
-    private val listingRepository: ListingRepository
+    private val listingRepository: ListingRepository,
+    private val currentUserId: String? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ListingDetailUiState>(ListingDetailUiState.Loading)
@@ -78,7 +79,9 @@ class ListingDetailViewModel(
             availabilityStatus = statusLabel,
             isReserved = availabilityStatus == PropertyStatus.RENTED,
             imageUrls = imageUrls.ifEmpty { listOf("") },
-            ownerId = ownerId
+            ownerId = ownerId,
+            reservedByCurrentUser = currentUserId != null && reservedBy == currentUserId,
+            reservationRef = reservationRef
         )
     }
 
@@ -95,7 +98,9 @@ class ListingDetailViewModel(
             availabilityStatus = statusLabel,
             isReserved = isReserved,
             imageUrls = listOf(imageUrl).filter { it.isNotBlank() },
-            ownerId = ownerId
+            ownerId = ownerId,
+            reservedByCurrentUser = currentUserId != null && isReservedBy(currentUserId),
+            reservationRef = reservationRef
         )
     }
 
@@ -106,14 +111,15 @@ class ListingDetailViewModel(
     }
 
     companion object {
-        fun factory(listingId: String): ViewModelProvider.Factory =
+        fun factory(listingId: String, currentUserId: String? = null): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return ListingDetailViewModel(
                         listingId = listingId,
                         propertyRepository = PropertyRepository(),
-                        listingRepository = ListingRepository()
+                        listingRepository = ListingRepository(),
+                        currentUserId = currentUserId
                     ) as T
                 }
             }

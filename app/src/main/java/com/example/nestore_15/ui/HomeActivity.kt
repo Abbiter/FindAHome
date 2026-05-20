@@ -24,9 +24,12 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
+import com.example.nestore_15.data.model.Listing
 import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.model.VerificationStatus
+import com.example.nestore_15.data.preferences.AppNotificationStore
 import com.example.nestore_15.data.preferences.ListingFilterPreferencesStore
+import com.example.nestore_15.data.preferences.SavedListingsStore
 import com.example.nestore_15.data.repository.ChatRepository
 import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.session.SessionManager
@@ -49,33 +52,27 @@ class HomeActivity : ComponentActivity() {
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            Toast.makeText(this, "You'll get alerts when new listings match your filters.", Toast.LENGTH_SHORT).show()
-        } else {
-            MaterialAlertDialogBuilder(this)
-                .setTitle("Notifications off")
-                .setMessage("You can enable them anytime in Settings.")
-                .setPositiveButton("Open settings") { _, _ -> openAppNotificationSettings() }
-                .setNegativeButton(android.R.string.cancel, null)
-                .show()
-        }
-    }
+    ) { }
 
-    private val viewModel: HomeViewModel by viewModels { HomeViewModel.factory() }
+    private val filterStore by lazy { ListingFilterPreferencesStore(applicationContext) }
+    private val viewModel: HomeViewModel by viewModels {
+        HomeViewModel.factory(filterStore = filterStore)
+    }
     private val profileViewModel: ProfileViewModel by viewModels {
         ProfileViewModel.factory(sessionManager)
     }
     private val sessionManager by lazy { SessionManager(applicationContext) }
     private val chatRepository by lazy { ChatRepository() }
     private val listingRepository by lazy { ListingRepository() }
-    private val filterStore by lazy { ListingFilterPreferencesStore(applicationContext) }
+    private val savedListingsStore by lazy { SavedListingsStore(applicationContext) }
+    private val notificationStore by lazy { AppNotificationStore(applicationContext) }
     private val listingMatchNotifier by lazy {
         ListingMatchNotifier(
             context = applicationContext,
             sessionManager = sessionManager,
             listingRepository = listingRepository,
-            filterStore = filterStore
+            filterStore = filterStore,
+            notificationStore = notificationStore
         )
     }
 
@@ -121,8 +118,11 @@ class HomeActivity : ComponentActivity() {
             val navController = rememberNavController()
             val homeState by viewModel.uiState.observeAsState(HomeUiState.Loading)
             val profileState by profileViewModel.uiState.observeAsState(ProfileUiState.Loading)
+            val filterPrefs by filterStore.preferencesFlow.collectAsStateWithLifecycle(
+                initialValue = com.example.nestore_15.data.model.ListingFilterPreferences()
+            )
             val currentUser by sessionManager.getCurrentUser().collectAsStateWithLifecycle(initialValue = null)
-            var searchQuery by remember { mutableStateOf("") }
+            var searchQuery by remember { mutableStateOf(filterPrefs.location.orEmpty()) }
 
             val verificationColor = when (currentUser?.effectiveVerificationStatus()) {
                 VerificationStatus.VERIFIED -> FindAHomeColors.VerifiedGreen
@@ -136,19 +136,26 @@ class HomeActivity : ComponentActivity() {
                     homeUiState = homeState ?: HomeUiState.Loading,
                     profileUiState = profileState ?: ProfileUiState.Loading,
                     searchQuery = searchQuery,
-                    onSearchChange = { searchQuery = it },
-                    onSearchDone = {
+                    onSearchChange = { query ->
+                        searchQuery = query
+                        viewModel.setSearchQuery(query)
+                    },
+                    filterPreferences = filterPrefs,
+                    onApplyFilters = { min, max, location ->
                         lifecycleScope.launch {
-                            filterStore.saveLocationFilter(searchQuery)
-                            Toast.makeText(this@HomeActivity, "Filter saved", Toast.LENGTH_SHORT).show()
+                            filterStore.saveFilters(min, max, location)
+                            searchQuery = location.orEmpty()
+                            viewModel.setSearchQuery(location.orEmpty())
                         }
                     },
                     verificationDotColor = verificationColor,
-                    onNotifications = { setupNotificationEntry() },
+                    onNotifications = { openNotifications() },
                     onProfileHeader = {
                         startActivity(Intent(this@HomeActivity, ProfileActivity::class.java))
                     },
-                    onMapFab = { handleDepositAction() },
+                    onMapFab = {
+                        Toast.makeText(this@HomeActivity, "Map view coming soon", Toast.LENGTH_SHORT).show()
+                    },
                     onOpenMessages = {
                         startActivity(Intent(this@HomeActivity, ConversationsActivity::class.java))
                     },
@@ -161,7 +168,10 @@ class HomeActivity : ComponentActivity() {
                     onLogout = { confirmLogout() },
                     onChangePassword = { sendPasswordReset(profileState) },
                     currentUserId = sessionManager.getCurrentUserId(),
-                    onContactProvider = ::contactProvider
+                    onContactProvider = ::contactProvider,
+                    onToggleFavorite = ::toggleFavorite,
+                    savedListingsStore = savedListingsStore,
+                    notificationStore = notificationStore
                 )
             }
         }
@@ -176,6 +186,31 @@ class HomeActivity : ComponentActivity() {
         )
 
         listingMatchNotifier.start(lifecycleScope)
+    }
+
+    private fun openNotifications() {
+        maybeRequestNotificationPermission()
+        startActivity(Intent(this, NotificationsActivity::class.java))
+    }
+
+    private fun maybeRequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    private fun toggleFavorite(listing: Listing) {
+        lifecycleScope.launch {
+            val saved = savedListingsStore.toggleSaved(listing.id)
+            Toast.makeText(
+                this@HomeActivity,
+                if (saved) "Saved to My Homes" else "Removed from saved",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     private fun contactProvider(detail: ListingDetailsUi) {
@@ -245,50 +280,5 @@ class HomeActivity : ComponentActivity() {
                     Toast.makeText(this, task.exception?.message ?: "Could not send email", Toast.LENGTH_LONG).show()
                 }
             }
-    }
-
-    private fun handleDepositAction() {
-        lifecycleScope.launch {
-            val isLoggedIn = sessionManager.isLoggedIn.first()
-            if (!isLoggedIn) {
-                Toast.makeText(this@HomeActivity, "Please log in to continue", Toast.LENGTH_SHORT).show()
-                return@launch
-            }
-            Toast.makeText(this@HomeActivity, "Deposit feature coming soon", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun setupNotificationEntry() {
-        if (Build.VERSION.SDK_INT >= 33) {
-            when {
-                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-                    PackageManager.PERMISSION_GRANTED -> openAppNotificationSettings()
-                ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.POST_NOTIFICATIONS) -> {
-                    MaterialAlertDialogBuilder(this)
-                        .setMessage(R.string.notification_rationale)
-                        .setPositiveButton(R.string.notification_allow) { _, _ ->
-                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        }
-                        .setNegativeButton(R.string.not_now, null)
-                        .show()
-                }
-                else -> notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        } else {
-            openAppNotificationSettings()
-        }
-    }
-
-    private fun openAppNotificationSettings() {
-        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
-            }
-        } else {
-            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.fromParts("package", packageName, null)
-            }
-        }
-        runCatching { startActivity(intent) }
     }
 }
