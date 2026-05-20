@@ -10,12 +10,16 @@ private fun String?.toUserRoleOrDefault(): UserRole =
     runCatching { UserRole.valueOf(this ?: "") }.getOrDefault(UserRole.STUDENT)
 
 fun DocumentSnapshot.toUserFromDocument(fallbackUser: FirebaseUser): User {
+    val authName = fallbackUser.displayName.orEmpty().trim()
+    val authPhone = fallbackUser.phoneNumber.orEmpty().trim()
     if (!exists()) {
         return User(
             id = fallbackUser.uid,
             email = fallbackUser.email.orEmpty(),
             role = UserRole.STUDENT,
-            isVerified = false
+            isVerified = false,
+            fullName = authName,
+            phone = authPhone
         )
     }
     val isVerified = getBoolean("isVerified") ?: false
@@ -27,8 +31,8 @@ fun DocumentSnapshot.toUserFromDocument(fallbackUser: FirebaseUser): User {
         email = getString("email") ?: fallbackUser.email.orEmpty(),
         role = getString("role").toUserRoleOrDefault(),
         isVerified = isVerified,
-        fullName = getString("fullName").orEmpty(),
-        phone = getString("phone").orEmpty(),
+        fullName = getString("fullName").orEmpty().ifBlank { authName },
+        phone = getString("phone").orEmpty().ifBlank { authPhone },
         photoUrl = getString("photoUrl").orEmpty(),
         verificationStatus = verificationStatus,
         verificationDocumentUrl = getString("verificationDocumentUrl").orEmpty(),

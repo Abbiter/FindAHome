@@ -177,7 +177,7 @@ private fun ConversationsEmptyContent(
         )
         Text(
             if (showError) errorMessage
-            else "Messages with property owners will appear here",
+            else "Chats with students or property hosts will appear here",
             style = MaterialTheme.typography.bodyMedium,
             color = FindAHomeColors.TextSecondary,
             modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)

@@ -56,9 +56,6 @@
             android:name=".ui.ProviderManageListingsActivity"
             android:exported="false" />
         <activity
-            android:name=".ui.ProviderInquiriesActivity"
-            android:exported="false" />
-        <activity
             android:name=".ui.ProviderListingDetailActivity"
             android:exported="false" />
         <activity

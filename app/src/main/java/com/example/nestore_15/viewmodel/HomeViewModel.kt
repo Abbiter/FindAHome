@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.nestore_15.data.model.Listing
 import com.example.nestore_15.data.preferences.ListingFilterPreferencesStore
-import com.example.nestore_15.data.repository.InquiryRepository
 import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.repository.PropertyRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +23,6 @@ sealed class HomeUiState {
 class HomeViewModel(
     private val listingRepository: ListingRepository,
     private val propertyRepository: PropertyRepository,
-    private val inquiryRepository: InquiryRepository,
     private val filterStore: ListingFilterPreferencesStore
 ) : ViewModel() {
 
@@ -58,28 +56,6 @@ class HomeViewModel(
         }
     }
 
-    fun submitInquiry(
-        listing: Listing,
-        message: String,
-        studentId: String,
-        studentName: String,
-        onResult: (Result<Unit>) -> Unit
-    ) {
-        viewModelScope.launch {
-            val result = runCatching {
-                inquiryRepository.createInquiry(
-                    propertyId = listing.id,
-                    propertyTitle = listing.title,
-                    providerId = listing.ownerId,
-                    studentId = studentId,
-                    studentName = studentName,
-                    message = message
-                )
-            }.map { }
-            onResult(result)
-        }
-    }
-
     private fun observeListings() {
         _uiState.value = HomeUiState.Loading
         viewModelScope.launch {
@@ -109,7 +85,6 @@ class HomeViewModel(
         fun factory(
             listingRepository: ListingRepository = ListingRepository(),
             propertyRepository: PropertyRepository = PropertyRepository(),
-            inquiryRepository: InquiryRepository = InquiryRepository(),
             filterStore: ListingFilterPreferencesStore
         ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
@@ -118,7 +93,6 @@ class HomeViewModel(
                     return HomeViewModel(
                         listingRepository,
                         propertyRepository,
-                        inquiryRepository,
                         filterStore
                     ) as T
                 }

@@ -49,7 +49,6 @@ fun ProviderHomeScreen(
     uiState: ProviderDashboardUiState,
     onAddProperty: () -> Unit,
     onManageListings: () -> Unit,
-    onInquiries: () -> Unit,
     onMessages: () -> Unit,
     onNotifications: () -> Unit,
     onProfile: () -> Unit,
@@ -100,11 +99,10 @@ fun ProviderHomeScreen(
                 Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                SecondaryGreenButton("Manage", onManageListings, Modifier.weight(1f))
+                SecondaryGreenButton("Manage listings", onManageListings, Modifier.weight(1f))
                 PrimaryOrangeButton("Messages", onMessages, Modifier.weight(1f))
-                SecondaryGreenButton("Inquiries", onInquiries, Modifier.weight(1f))
             }
 
             Text(

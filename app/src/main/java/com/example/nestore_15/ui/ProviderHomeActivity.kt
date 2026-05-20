@@ -104,9 +104,6 @@ class ProviderHomeActivity : ComponentActivity() {
                     onManageListings = {
                         startActivity(Intent(this, ProviderManageListingsActivity::class.java))
                     },
-                    onInquiries = {
-                        startActivity(Intent(this, ProviderInquiriesActivity::class.java))
-                    },
                     onMessages = {
                         startActivity(Intent(this, ConversationsActivity::class.java))
                     },

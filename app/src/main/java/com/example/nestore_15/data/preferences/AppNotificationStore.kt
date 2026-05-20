@@ -29,6 +29,15 @@ class AppNotificationStore(private val context: Context) {
             decode(prefs[key].orEmpty())
         }
 
+    suspend fun clearForUser(userId: String) {
+        if (userId.isBlank()) return
+        context.notificationDataStore.edit { prefs ->
+            val current = decode(prefs[key].orEmpty())
+            val remaining = current.filter { it.userId != userId }
+            prefs[key] = encode(remaining)
+        }
+    }
+
     suspend fun add(
         userId: String,
         title: String,

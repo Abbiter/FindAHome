@@ -234,11 +234,15 @@ class PropertyRepository(
     }
 
     suspend fun deleteProperty(propertyId: String) {
-        val inquiries = firestore.collection("inquiries")
-            .whereEqualTo("propertyId", propertyId)
-            .get()
-            .await()
-        inquiries.documents.forEach { it.reference.delete().await() }
+        runCatching {
+            val inquiries = firestore.collection("inquiries")
+                .whereEqualTo("propertyId", propertyId)
+                .get()
+                .await()
+            inquiries.documents.forEach { doc ->
+                runCatching { doc.reference.delete().await() }
+            }
+        }
         firestore.collection("properties").document(propertyId).delete().await()
     }
 

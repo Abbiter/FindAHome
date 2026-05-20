@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.nestore_15.data.model.User
@@ -29,9 +30,15 @@ class UserPreferences(private val context: Context) {
         val phone = stringPreferencesKey("phone")
         val photoUrl = stringPreferencesKey("photo_url")
         val verificationStatus = stringPreferencesKey("verification_status")
+        val verificationDocumentUrl = stringPreferencesKey("verification_document_url")
         val studentInstitution = stringPreferencesKey("student_institution")
-        val providerBusinessName = stringPreferencesKey("provider_business_name")
+        val studentId = stringPreferencesKey("student_id")
+        val studentPreferredLocation = stringPreferencesKey("student_preferred_location")
         val studentBudgetMax = doublePreferencesKey("student_budget_max")
+        val providerBusinessName = stringPreferencesKey("provider_business_name")
+        val providerContactAddress = stringPreferencesKey("provider_contact_address")
+        val providerOwnershipProofUrl = stringPreferencesKey("provider_ownership_proof_url")
+        val providerPropertyCount = intPreferencesKey("provider_property_count")
     }
 
     val currentUser: Flow<User?> =
@@ -54,12 +61,22 @@ class UserPreferences(private val context: Context) {
             prefs[Keys.phone] = user.phone
             prefs[Keys.photoUrl] = user.photoUrl
             prefs[Keys.verificationStatus] = user.verificationStatus.name
+            prefs[Keys.verificationDocumentUrl] = user.verificationDocumentUrl
             prefs[Keys.studentInstitution] = user.studentInstitution
+            prefs[Keys.studentId] = user.studentId
+            prefs[Keys.studentPreferredLocation] = user.studentPreferredLocation
             prefs[Keys.providerBusinessName] = user.providerBusinessName
+            prefs[Keys.providerContactAddress] = user.providerContactAddress
+            prefs[Keys.providerOwnershipProofUrl] = user.providerOwnershipProofUrl
             if (user.studentBudgetMax != null) {
                 prefs[Keys.studentBudgetMax] = user.studentBudgetMax
             } else {
                 prefs.remove(Keys.studentBudgetMax)
+            }
+            if (user.providerPropertyCount != null) {
+                prefs[Keys.providerPropertyCount] = user.providerPropertyCount
+            } else {
+                prefs.remove(Keys.providerPropertyCount)
             }
         }
     }
@@ -87,9 +104,15 @@ class UserPreferences(private val context: Context) {
             phone = this[Keys.phone].orEmpty(),
             photoUrl = this[Keys.photoUrl].orEmpty(),
             verificationStatus = verificationStatus,
+            verificationDocumentUrl = this[Keys.verificationDocumentUrl].orEmpty(),
             studentInstitution = this[Keys.studentInstitution].orEmpty(),
+            studentId = this[Keys.studentId].orEmpty(),
+            studentPreferredLocation = this[Keys.studentPreferredLocation].orEmpty(),
+            studentBudgetMax = this[Keys.studentBudgetMax],
             providerBusinessName = this[Keys.providerBusinessName].orEmpty(),
-            studentBudgetMax = this[Keys.studentBudgetMax]
+            providerContactAddress = this[Keys.providerContactAddress].orEmpty(),
+            providerOwnershipProofUrl = this[Keys.providerOwnershipProofUrl].orEmpty(),
+            providerPropertyCount = this[Keys.providerPropertyCount]
         )
     }
 }

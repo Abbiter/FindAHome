@@ -67,7 +67,8 @@ service cloud.firestore {
         resource.data.studentId == request.auth.uid ||
         resource.data.providerId == request.auth.uid
       );
-      allow delete: if false;
+      allow delete: if signedIn() &&
+        resource.data.providerId == request.auth.uid;
     }
 
     match /conversations/{conversationId} {

@@ -121,12 +121,13 @@ class ProviderManageListingsActivity : AppCompatActivity() {
                         .onSuccess {
                             Toast.makeText(this@ProviderManageListingsActivity, "Deleted", Toast.LENGTH_SHORT).show()
                         }
-                        .onFailure {
-                            Toast.makeText(
-                                this@ProviderManageListingsActivity,
-                                it.message ?: "Delete failed",
-                                Toast.LENGTH_LONG
-                            ).show()
+                        .onFailure { e ->
+                            val msg = when {
+                                e.message?.contains("PERMISSION_DENIED", ignoreCase = true) == true ->
+                                    "Permission denied. Publish the latest firestore.rules in Firebase Console."
+                                else -> e.message ?: "Delete failed"
+                            }
+                            Toast.makeText(this@ProviderManageListingsActivity, msg, Toast.LENGTH_LONG).show()
                         }
                 }
             }

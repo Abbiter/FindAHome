@@ -51,8 +51,9 @@ fun DocumentSnapshot.toUserOrNull(): User? {
     if (!exists()) return null
     val isVerified = getBoolean("isVerified") ?: false
     val verificationStatus = VerificationStatus.fromFirestore(getString("verificationStatus"), isVerified)
+    val docId = id
     return User(
-        id = getString("uid") ?: id,
+        id = getString("uid")?.takeIf { it.isNotBlank() } ?: docId,
         email = getString("email").orEmpty(),
         role = runCatching { UserRole.valueOf(getString("role").orEmpty()) }.getOrDefault(UserRole.STUDENT),
         isVerified = isVerified,

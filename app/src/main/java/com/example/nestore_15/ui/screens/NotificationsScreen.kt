@@ -19,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +38,7 @@ import java.util.Locale
 fun NotificationsScreen(
     notifications: List<AppNotification>,
     onBack: () -> Unit,
+    onClearAll: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -45,6 +47,18 @@ fun NotificationsScreen(
             .background(FindAHomeColors.BackgroundSoft)
     ) {
         FindAHomeCenterTopBar(title = "Notifications", onBack = onBack)
+        if (notifications.isNotEmpty()) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(onClick = onClearAll) {
+                    Text("Clear all", color = FindAHomeColors.OrangeAccent)
+                }
+            }
+        }
         if (notifications.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {

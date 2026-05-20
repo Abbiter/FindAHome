@@ -23,7 +23,7 @@
     <string name="conversations_title">Messages</string>
     <string name="conversations_empty_title">Your inbox is ready</string>
     <string name="conversations_empty_subtitle">When you message a host about a listing, the conversation will show up here.</string>
-    <string name="conversations_empty_tip_1">• Open any home and tap inquire or message the provider</string>
+    <string name="conversations_empty_tip_1">• Open any home and tap Contact Provider to start a chat</string>
     <string name="conversations_empty_tip_2">• Providers reply here — you will see the property photo and title</string>
     <string name="conversations_empty_tip_3">• Pull down on Home to refresh after new listings are added</string>
     <string name="conversations_empty_browse">Browse homes</string>

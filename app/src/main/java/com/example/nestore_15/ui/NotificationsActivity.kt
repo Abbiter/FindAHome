@@ -7,10 +7,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.lifecycleScope
 import com.example.nestore_15.data.preferences.AppNotificationStore
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.ui.screens.NotificationsScreen
 import com.example.nestore_15.ui.theme.FindAHomeTheme
+import kotlinx.coroutines.launch
 
 class NotificationsActivity : ComponentActivity() {
 
@@ -34,7 +36,17 @@ class NotificationsActivity : ComponentActivity() {
             FindAHomeTheme {
                 NotificationsScreen(
                     notifications = notifications,
-                    onBack = { finish() }
+                    onBack = { finish() },
+                    onClearAll = {
+                        lifecycleScope.launch {
+                            notificationStore.clearForUser(userId)
+                            Toast.makeText(
+                                this@NotificationsActivity,
+                                "Notifications cleared",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
                 )
             }
         }

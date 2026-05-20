@@ -152,6 +152,11 @@ private fun ProfileContent(
         if (user.role == UserRole.STUDENT) {
             ProfileInfoCard("Institution", user.studentInstitution.ifBlank { "—" })
             ProfileInfoCard("Student ID", user.studentId.ifBlank { "—" })
+            ProfileInfoCard("Preferred area", user.studentPreferredLocation.ifBlank { "—" })
+            ProfileInfoCard(
+                "Budget (max)",
+                user.studentBudgetMax?.let { "P${it.toInt()} / month" } ?: "—"
+            )
         } else {
             ProfileInfoCard("Business", user.providerBusinessName.ifBlank { "—" })
             ProfileInfoCard("Address", user.providerContactAddress.ifBlank { "—" })
