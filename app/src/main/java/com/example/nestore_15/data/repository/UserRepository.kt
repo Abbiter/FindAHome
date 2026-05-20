@@ -1,5 +1,6 @@
 package com.example.nestore_15.data.repository
 
+import android.net.Uri
 import com.example.nestore_15.data.model.User
 import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.model.VerificationStatus
@@ -7,6 +8,10 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
+/**
+ * User profile reads from Firestore; document uploads use local markers for assignment builds
+ * (no Firebase Storage required).
+ */
 class UserRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
@@ -15,6 +20,30 @@ class UserRepository(
         return runCatching {
             firestore.collection("users").document(userId).get().await().toUserOrNull()
         }.getOrNull()
+    }
+
+    suspend fun uploadProfilePhoto(userId: String, uri: Uri): String {
+        uri
+        userId
+        return LOCAL_PROFILE_MARKER
+    }
+
+    suspend fun uploadVerificationDocument(userId: String, uri: Uri): String {
+        uri
+        userId
+        return LOCAL_VERIFICATION_MARKER
+    }
+
+    suspend fun uploadOwnershipProof(userId: String, uri: Uri): String {
+        uri
+        userId
+        return LOCAL_OWNERSHIP_MARKER
+    }
+
+    private companion object {
+        const val LOCAL_PROFILE_MARKER = "local://profile_selected"
+        const val LOCAL_VERIFICATION_MARKER = "local://verification_on_file"
+        const val LOCAL_OWNERSHIP_MARKER = "local://ownership_on_file"
     }
 }
 
