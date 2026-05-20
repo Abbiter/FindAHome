@@ -22,7 +22,9 @@ internal fun DocumentSnapshot.toPropertyOrNull(): Property? {
     val title = getString("title") ?: return null
     val description = getString("description").orEmpty()
     val location = getString("location") ?: return null
-    val price = getDouble("priceBwp") ?: return null
+    val price = getDouble("priceBwp")
+        ?: getLong("priceBwp")?.toDouble()
+        ?: return null
     val rooms = getLong("roomCount")?.toInt()
         ?: getDouble("roomCount")?.toInt()
         ?: 0
@@ -84,7 +86,7 @@ class PropertyRepository(
             .whereEqualTo("ownerId", ownerId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    close(error)
+                    trySend(emptyList()).isSuccess
                     return@addSnapshotListener
                 }
                 val list = snapshot?.documents.orEmpty().mapNotNull { it.toPropertyOrNull() }
@@ -97,7 +99,7 @@ class PropertyRepository(
         val registration: ListenerRegistration = firestore.collection("properties")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    close(error)
+                    trySend(emptyList()).isSuccess
                     return@addSnapshotListener
                 }
                 val list = snapshot?.documents.orEmpty().mapNotNull { it.toPropertyOrNull() }

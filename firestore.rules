@@ -10,6 +10,41 @@ service cloud.firestore {
         request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
     }
 
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow update: if signedIn() && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    match /properties/{propertyId} {
+      allow read: if signedIn();
+      allow create: if signedIn() &&
+        request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if signedIn() &&
+        resource.data.ownerId == request.auth.uid;
+    }
+
+    match /listings/{listingId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if signedIn();
+    }
+
+    match /inquiries/{inquiryId} {
+      allow read: if signedIn() && (
+        resource.data.studentId == request.auth.uid ||
+        resource.data.providerId == request.auth.uid
+      );
+      allow create: if signedIn() &&
+        request.resource.data.studentId == request.auth.uid;
+      allow update: if signedIn() && (
+        resource.data.studentId == request.auth.uid ||
+        resource.data.providerId == request.auth.uid
+      );
+      allow delete: if false;
+    }
+
     match /conversations/{conversationId} {
       allow read: if isParticipant(conversationId);
       allow create: if signedIn() && request.auth.uid in request.resource.data.participants;

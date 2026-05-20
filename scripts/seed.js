@@ -233,7 +233,7 @@ function buildProperties() {
     const imageCount = randInt(1, 3);
     const title = `${pick(TITLE_PREFIXES)} — ${pick(TITLE_SUFFIXES)}`;
     const location = pick(LOCATIONS);
-    const priceBwp = randInt(800, 3500);
+    const priceBwp = Number(randInt(800, 3500));
     const roomCount = randInt(1, 4);
     writes.push({
       ref: db.collection('properties').doc(),
@@ -244,7 +244,9 @@ function buildProperties() {
         priceBwp,
         roomCount,
         availabilityStatus: isRented ? 'RENTED' : 'AVAILABLE',
-        availabilityDate: new Date(createdAt).toISOString().slice(0, 10),
+        availabilityDate: isRented
+          ? new Date(createdAt).toISOString().slice(0, 10)
+          : new Date().toISOString().slice(0, 10),
         imageUrls: uniqueImages(imageCount),
         description: `${title} in ${location}. ${roomCount} room(s), ideal for students. Contact provider for viewing.`,
         createdAt,

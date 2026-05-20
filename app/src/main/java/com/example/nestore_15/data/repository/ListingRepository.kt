@@ -71,7 +71,7 @@ class ListingRepository(
         val registration: ListenerRegistration = firestore.collection("properties")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    close(error)
+                    trySend(emptyList()).isSuccess
                     return@addSnapshotListener
                 }
                 val list = snapshot?.documents.orEmpty()
@@ -108,7 +108,7 @@ class ListingRepository(
         val registration: ListenerRegistration = query
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    close(error)
+                    trySend(emptyList()).isSuccess
                     return@addSnapshotListener
                 }
 
@@ -179,7 +179,9 @@ class ListingRepository(
 
     private fun com.google.firebase.firestore.DocumentSnapshot.toListingOrNull(): Listing? {
         val title = getString("title") ?: return null
-        val price = getDouble("priceBwp") ?: return null
+        val price = getDouble("priceBwp")
+            ?: getLong("priceBwp")?.toDouble()
+            ?: return null
         val location = getString("location") ?: return null
         val type = getString("type") ?: ""
         val amenities = (get("amenities") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()

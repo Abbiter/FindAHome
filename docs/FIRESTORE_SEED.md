@@ -1,5 +1,21 @@
 # Firestore seed guide (assignment mode)
 
+## If the app shows "No listings found"
+
+1. **Publish Firestore rules** — Copy `firestore.rules` from the project root into [Firebase Console](https://console.firebase.google.com/project/findahome-50b4d/firestore/rules) → Firestore → Rules → Publish. Without rules for `properties` / `listings`, signed-in users cannot read seeded data.
+2. **Run the Node seeder** (same project as `app/google-services.json`):
+
+```bash
+cd scripts
+npm install
+# Place serviceAccountKey.json from Firebase Console → Project settings → Service accounts
+node seed.js --reset
+```
+
+3. **Sign in** on the device with any Firebase Auth account (student). Listings come from the `properties` collection.
+
+---
+
 Use **drawable keys** in `imageUrls` / `imageUrl`, not Firebase Storage URLs.
 
 ## Demo accounts (create in Firebase Authentication)
