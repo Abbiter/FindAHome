@@ -12,6 +12,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -40,7 +41,11 @@ class SplashViewModel(application: Application) : AndroidViewModel(application) 
     fun startStartupFlow() {
         viewModelScope.launch {
             _uiState.value = SplashUiState.Loading
-            runStartup().fold(
+            val startedAt = System.currentTimeMillis()
+            val result = runStartup()
+            val remaining = SPLASH_MIN_DISPLAY_MS - (System.currentTimeMillis() - startedAt)
+            if (remaining > 0) delay(remaining)
+            result.fold(
                 onSuccess = { dest -> _uiState.value = SplashUiState.Ready(dest) },
                 onFailure = { e ->
                     _uiState.value = SplashUiState.ConnectivityIssue(
@@ -92,4 +97,9 @@ class SplashViewModel(application: Application) : AndroidViewModel(application) 
                 false
             }
         } ?: false
+
+    companion object {
+        /** Minimum time the splash loader is shown before navigating away. */
+        const val SPLASH_MIN_DISPLAY_MS = 3_000L
+    }
 }
