@@ -41,9 +41,12 @@ class ConversationsViewModel(
             _uiState.value = ConversationsUiState.Loading
             chatRepository.observeConversations(currentUserId)
                 .catch { e ->
-                    _uiState.value = ConversationsUiState.Error(
-                        e.message ?: "Could not load conversations"
-                    )
+                    val msg = when {
+                        e.message?.contains("PERMISSION_DENIED", ignoreCase = true) == true ->
+                            "Permission denied. Publish the latest firestore.rules in Firebase Console."
+                        else -> e.message ?: "Could not load conversations"
+                    }
+                    _uiState.value = ConversationsUiState.Error(msg)
                 }
                 .collect { list ->
                     _uiState.value = ConversationsUiState.Ready(list)

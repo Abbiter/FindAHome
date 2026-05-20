@@ -80,8 +80,13 @@ class PaymentViewModel(
                 onSuccess = { ref ->
                     PaymentUiState.Success(ref, current.summary)
                 },
-                onFailure = {
-                    PaymentUiState.Error(it.message ?: "Payment could not be completed")
+                onFailure = { e ->
+                    val msg = when {
+                        e.message?.contains("PERMISSION_DENIED", ignoreCase = true) == true ->
+                            "Permission denied. Publish the latest firestore.rules in Firebase Console."
+                        else -> e.message ?: "Payment could not be completed"
+                    }
+                    PaymentUiState.Error(msg)
                 }
             )
         }

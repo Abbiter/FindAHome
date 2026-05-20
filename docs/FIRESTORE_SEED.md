@@ -3,7 +3,9 @@
 ## If the app shows "No listings found"
 
 1. **Verify data exists** — `cd scripts && node verify.js` should report **properties: 350**. If zero, run the seeder (step 2).
-2. **Publish Firestore rules** — Copy `firestore.rules` from the project root into [Firebase Console](https://console.firebase.google.com/project/findahome-50b4d/firestore/rules) → Publish. Conversations need the **latest** rules (`resource.data.participants`, not `get()` on the same doc).
+2. **Publish Firestore rules** — Copy `firestore.rules` from the project root into [Firebase Console](https://console.firebase.google.com/project/findahome-50b4d/firestore/rules) → **Publish**. Required for:
+   - **Chats**: read conversations where your UID is in `participants`
+   - **Payment / Reserve**: students may set `availabilityStatus` to `RENTED` on properties they do not own
 3. **Run the Node seeder** (project `findahome-50b4d`):
 
 ```bash
