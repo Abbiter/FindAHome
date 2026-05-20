@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Android 12+ system splash: solid brand color only, no static launcher logo. -->
+    <style name="Theme.Nestore.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/brand_primary_dark</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_transparent</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/brand_primary_dark</item>
+        <item name="postSplashScreenTheme">@style/Theme.Nestore.Splash.Post</item>
+    </style>
+
+    <!-- After system splash exits, window is transparent so Compose is visible immediately. -->
+    <style name="Theme.Nestore.Splash.Post" parent="Theme.Nestore.Splash.Base">
+        <item name="android:windowBackground">@android:color/transparent</item>
+    </style>
+
+</resources>
