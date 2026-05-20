@@ -20,19 +20,22 @@ class AppNotificationHelper(private val context: Context) {
 
     suspend fun notifyUser(
         userId: String,
+        dedupKey: String,
         title: String,
         message: String,
         type: NotificationType = NotificationType.GENERAL,
         subtitle: String = ""
-    ) {
-        if (userId.isBlank()) return
-        store.add(userId, title, message, type, subtitle)
+    ): Boolean {
+        if (userId.isBlank()) return false
+        val added = store.addOnce(userId, dedupKey, title, message, type, subtitle)
+        if (!added) return false
         postSystemNotification(
-            notificationId = (userId + title + message).hashCode(),
+            notificationId = dedupKey.hashCode(),
             channelId = channelFor(type),
             title = title,
             body = if (subtitle.isNotBlank()) "$message\n$subtitle" else message
         )
+        return true
     }
 
     private fun postSystemNotification(

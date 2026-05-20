@@ -7,6 +7,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.example.nestore_15.data.model.AppNotification
 import com.example.nestore_15.data.model.NotificationType
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.json.JSONArray
 import org.json.JSONObject
@@ -16,25 +17,57 @@ private val Context.notificationDataStore by preferencesDataStore(name = "app_no
 
 class AppNotificationStore(private val context: Context) {
 
-    private val key = stringPreferencesKey("notifications_json")
+    private val notificationsKey = stringPreferencesKey("notifications_json")
+    private val dedupKeysKey = stringPreferencesKey("notification_dedup_keys")
 
     fun notificationsForUser(userId: String): Flow<List<AppNotification>> =
         notificationsFlow.map { list ->
             if (userId.isBlank()) emptyList()
-            else list.filter { it.userId == userId || it.userId.isBlank() }
+            else list.filter { it.userId == userId }
         }
 
     val notificationsFlow: Flow<List<AppNotification>> =
         context.notificationDataStore.data.map { prefs ->
-            decode(prefs[key].orEmpty())
+            decode(prefs[notificationsKey].orEmpty())
         }
+
+    suspend fun hasDedupKey(userId: String, dedupKey: String): Boolean {
+        if (userId.isBlank() || dedupKey.isBlank()) return false
+        val prefs = context.notificationDataStore.data.first()
+        val keys = loadDedupKeys(prefs[dedupKeysKey].orEmpty())
+        return keys[userId]?.contains(dedupKey) == true
+    }
+
+    /**
+     * Adds a notification only if [dedupKey] was not seen for this user.
+     * Prevents the same alert from reappearing after app restart or "Clear all".
+     */
+    suspend fun addOnce(
+        userId: String,
+        dedupKey: String,
+        title: String,
+        message: String,
+        type: NotificationType = NotificationType.GENERAL,
+        subtitle: String = ""
+    ): Boolean {
+        if (userId.isBlank() || dedupKey.isBlank()) return false
+        if (hasDedupKey(userId, dedupKey)) return false
+        add(userId, title, message, type, subtitle)
+        recordDedupKey(userId, dedupKey)
+        return true
+    }
 
     suspend fun clearForUser(userId: String) {
         if (userId.isBlank()) return
         context.notificationDataStore.edit { prefs ->
-            val current = decode(prefs[key].orEmpty())
-            val remaining = current.filter { it.userId != userId }
-            prefs[key] = encode(remaining)
+            val current = decode(prefs[notificationsKey].orEmpty())
+            val removing = current.filter { it.userId == userId }
+            val keys = loadDedupKeys(prefs[dedupKeysKey].orEmpty()).toMutableMap()
+            val userKeys = keys.getOrPut(userId) { mutableSetOf() }.toMutableSet()
+            removing.forEach { userKeys.add(dedupKeyFor(it)) }
+            keys[userId] = userKeys
+            prefs[dedupKeysKey] = encodeDedupKeys(keys)
+            prefs[notificationsKey] = encode(current.filter { it.userId != userId })
         }
     }
 
@@ -47,7 +80,7 @@ class AppNotificationStore(private val context: Context) {
     ) {
         if (userId.isBlank()) return
         context.notificationDataStore.edit { prefs ->
-            val current = decode(prefs[key].orEmpty()).toMutableList()
+            val current = decode(prefs[notificationsKey].orEmpty()).toMutableList()
             current.add(
                 0,
                 AppNotification(
@@ -60,9 +93,50 @@ class AppNotificationStore(private val context: Context) {
                     subtitle = subtitle
                 )
             )
-            prefs[key] = encode(current.take(80))
+            prefs[notificationsKey] = encode(current.take(80))
         }
     }
+
+    private suspend fun recordDedupKey(userId: String, dedupKey: String) {
+        context.notificationDataStore.edit { prefs ->
+            val keys = loadDedupKeys(prefs[dedupKeysKey].orEmpty()).toMutableMap()
+            val userKeys = keys.getOrPut(userId) { mutableSetOf() }.toMutableSet()
+            userKeys.add(dedupKey)
+            keys[userId] = userKeys
+            prefs[dedupKeysKey] = encodeDedupKeys(keys)
+        }
+    }
+
+    private fun loadDedupKeys(raw: String): Map<String, Set<String>> {
+        if (raw.isBlank()) return emptyMap()
+        return runCatching {
+            val root = JSONObject(raw)
+            buildMap {
+                root.keys().forEach { userId ->
+                    val arr = root.optJSONArray(userId) ?: JSONArray()
+                    put(userId, buildSet {
+                        for (i in 0 until arr.length()) {
+                            add(arr.optString(i))
+                        }
+                    })
+                }
+            }
+        }.getOrDefault(emptyMap())
+    }
+
+    private fun encodeDedupKeys(keys: Map<String, Set<String>>): String {
+        val root = JSONObject()
+        keys.forEach { (userId, set) ->
+            val arr = JSONArray()
+            set.forEach { arr.put(it) }
+            root.put(userId, arr)
+        }
+        return root.toString()
+    }
+
+    /** Stable key so cleared items are not recreated on restart. */
+    fun dedupKeyFor(notification: AppNotification): String =
+        "${notification.type.name}|${notification.title}|${notification.subtitle}|${notification.message}"
 
     private fun encode(list: List<AppNotification>): String {
         val arr = JSONArray()

@@ -52,6 +52,7 @@ class ProviderReservationNotifier(
                         ?: "A student"
                     notificationHelper.notifyUser(
                         userId = providerId,
+                        dedupKey = "reservation:${property.id}:$ref",
                         title = "Property reserved",
                         message = "$studentName reserved \"${property.title}\" in ${property.location}.",
                         type = NotificationType.RESERVATION_RECEIVED,

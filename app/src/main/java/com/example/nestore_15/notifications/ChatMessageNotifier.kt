@@ -24,6 +24,7 @@ class ChatMessageNotifier(
         recipients.forEach { recipientId ->
             notificationHelper.notifyUser(
                 userId = recipientId,
+                dedupKey = "chat:$conversationId:$senderId:${preview.hashCode()}",
                 title = "New message",
                 message = "$senderLabel: $preview",
                 type = NotificationType.CHAT,

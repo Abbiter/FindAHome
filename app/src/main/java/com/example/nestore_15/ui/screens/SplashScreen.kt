@@ -3,8 +3,8 @@ package com.example.nestore_15.ui.screens
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,16 +30,15 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.nestore_15.R
 import com.example.nestore_15.ui.components.PrimaryOrangeButton
-import com.example.nestore_15.ui.splash.AnimatedGradientBackground
-import com.example.nestore_15.ui.splash.AnimatedLoader
 import com.example.nestore_15.ui.splash.SplashAnimationConfig
-import com.example.nestore_15.ui.splash.SplashLogoContent
 import com.example.nestore_15.ui.theme.FindAHomeColors
 
 @Composable
@@ -50,12 +51,9 @@ fun SplashScreen(
     onSplashContentReady: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val darkTheme = isSystemInDarkTheme()
     var taglineVisible by remember { mutableStateOf(false) }
 
-    // Dismiss the Android 12 system splash only after Compose has drawn animated content.
     LaunchedEffect(Unit) {
-        withFrameMillis { }
         withFrameMillis { }
         onSplashContentReady()
     }
@@ -83,13 +81,9 @@ fun SplashScreen(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
+            .background(FindAHomeColors.PrimaryDarkBlue)
             .graphicsLayer { alpha = screenAlpha }
     ) {
-        AnimatedGradientBackground(
-            modifier = Modifier.fillMaxSize(),
-            darkTheme = darkTheme
-        )
-
         val bottomAccentHeight = 3.dp
         val contentMaxHeight = maxHeight * 0.82f
         val logoMaxHeight = maxHeight * 0.42f
@@ -104,16 +98,24 @@ fun SplashScreen(
                 .padding(horizontal = 28.dp)
                 .padding(bottom = bottomAccentHeight + 8.dp)
         ) {
-            SplashLogoContent(
-                maxLogoHeight = logoMaxHeight,
-                widthFraction = 0.72f
+            Image(
+                painter = painterResource(R.drawable.splash_logo),
+                contentDescription = stringResource(R.string.app_name),
+                modifier = Modifier
+                    .fillMaxWidth(0.72f)
+                    .heightIn(max = logoMaxHeight),
+                contentScale = ContentScale.Fit
             )
 
-            AnimatedLoader(
-                visible = isLoading && errorMessage == null,
-                modifier = Modifier.padding(top = 20.dp),
-                orbSize = 44.dp
-            )
+            if (isLoading && errorMessage == null) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .padding(top = 24.dp)
+                        .size(44.dp),
+                    color = FindAHomeColors.OrangeAccent,
+                    strokeWidth = 4.dp
+                )
+            }
 
             Text(
                 text = stringResource(R.string.splash_tagline),

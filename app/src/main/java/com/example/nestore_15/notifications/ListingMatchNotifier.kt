@@ -76,8 +76,9 @@ class ListingMatchNotifier(
         newListings.forEach { listing ->
             scope.launch {
                 withContext(Dispatchers.IO) {
-                    notificationStore.add(
+                    notificationStore.addOnce(
                         userId = userId,
+                        dedupKey = "listing:${listing.id}",
                         title = "New matching listing",
                         message = "${listing.title} in ${listing.location}",
                         type = NotificationType.LISTING_MATCH,

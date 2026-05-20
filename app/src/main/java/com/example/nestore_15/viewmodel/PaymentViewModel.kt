@@ -104,6 +104,7 @@ class PaymentViewModel(
 
                 notificationHelper.notifyUser(
                     userId = currentUserId,
+                    dedupKey = "reservation:student:$currentUserId:${listing.id}:$ref",
                     title = "Reservation confirmed",
                     message = "You reserved ${current.summary.title} in ${current.summary.location}.",
                     type = NotificationType.RESERVATION,
@@ -113,6 +114,7 @@ class PaymentViewModel(
                 if (ownerId.isNotBlank() && ownerId != currentUserId) {
                     notificationHelper.notifyUser(
                         userId = ownerId,
+                        dedupKey = "reservation:provider:$ownerId:${listing.id}:$ref",
                         title = "Property reserved",
                         message = "$studentName reserved ${current.summary.title}. It is now marked as rented.",
                         type = NotificationType.RESERVATION_RECEIVED,
