@@ -84,6 +84,7 @@ class StudentListingDetailActivity : ComponentActivity() {
                         putExtra(ChatActivity.EXTRA_PROPERTY_TITLE, detail.title)
                         putExtra(ChatActivity.EXTRA_PROPERTY_IMAGE_URL, detail.imageUrls.firstOrNull().orEmpty())
                         putExtra(ChatActivity.EXTRA_PROPERTY_LOCATION, detail.location)
+                        putExtra(ChatActivity.EXTRA_OWNER_ID, detail.ownerId)
                         putExtra(ChatActivity.EXTRA_CURRENT_USER_ID, studentId)
                         putExtra(ChatActivity.EXTRA_RETURN_TO_PROPERTY, true)
                     }

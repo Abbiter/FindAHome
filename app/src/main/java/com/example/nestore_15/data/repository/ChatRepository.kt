@@ -78,6 +78,10 @@ class ChatRepository(
         awaitClose { registration.remove() }
     }
 
+    suspend fun sendSystemMessage(conversationId: String, message: String) {
+        sendMessage(conversationId, SYSTEM_SENDER_ID, message)
+    }
+
     suspend fun sendMessage(conversationId: String, senderId: String, message: String) {
         val conversationRef = firestore.collection("conversations").document(conversationId)
         conversationRef
@@ -146,6 +150,10 @@ class ChatRepository(
             lastMessage = getString("lastMessage").orEmpty(),
             lastUpdated = (getTimestamp("lastUpdated") ?: Timestamp.now()).toDate().time
         )
+    }
+
+    companion object {
+        const val SYSTEM_SENDER_ID = "system"
     }
 
     private suspend fun fetchUserDisplayName(userId: String, fallback: String): String {

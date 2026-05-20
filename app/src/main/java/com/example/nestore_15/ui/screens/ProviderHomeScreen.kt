@@ -50,6 +50,8 @@ fun ProviderHomeScreen(
     onAddProperty: () -> Unit,
     onManageListings: () -> Unit,
     onInquiries: () -> Unit,
+    onMessages: () -> Unit,
+    onNotifications: () -> Unit,
     onProfile: () -> Unit,
     onListingClick: (Listing) -> Unit,
     modifier: Modifier = Modifier
@@ -74,7 +76,8 @@ fun ProviderHomeScreen(
         ) {
             FindAHomeTopAppBar(
                 title = "Provider Dashboard",
-                showNotifications = false,
+                showNotifications = true,
+                onNotifications = onNotifications,
                 actions = {
                     androidx.compose.material3.TextButton(onClick = onProfile) {
                         Text("Profile", color = FindAHomeColors.TextOnPrimary)
@@ -90,17 +93,18 @@ fun ProviderHomeScreen(
             ) {
                 StatChip("Total", uiState.stats.totalListings.toString(), Modifier.weight(1f))
                 StatChip("Active", uiState.stats.activeListings.toString(), Modifier.weight(1f))
-                StatChip("Inquiries", uiState.stats.inquiriesCount.toString(), Modifier.weight(1f))
+                StatChip("Reserved", uiState.stats.reservedListings.toString(), Modifier.weight(1f))
             }
 
             Row(
                 Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 SecondaryGreenButton("Manage", onManageListings, Modifier.weight(1f))
-                PrimaryOrangeButton("Inquiries", onInquiries, Modifier.weight(1f))
+                PrimaryOrangeButton("Messages", onMessages, Modifier.weight(1f))
+                SecondaryGreenButton("Inquiries", onInquiries, Modifier.weight(1f))
             }
 
             Text(
@@ -171,7 +175,12 @@ private fun ProviderListingRow(listing: Listing, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = FindAHomeColors.CardSurface),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             ListingImage(
                 imageRef = listing.imageUrl,
                 contentDescription = listing.title,
@@ -181,7 +190,7 @@ private fun ProviderListingRow(listing: Listing, onClick: () -> Unit) {
                     .clip(ImageShape),
                 contentScale = ContentScale.Crop
             )
-            Column(Modifier.padding(start = 12.dp)) {
+            Column(Modifier.padding(start = 12.dp).weight(1f)) {
                 Text(
                     listing.title,
                     style = MaterialTheme.typography.titleMedium,
@@ -190,6 +199,20 @@ private fun ProviderListingRow(listing: Listing, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(listing.location, style = MaterialTheme.typography.bodySmall, color = FindAHomeColors.TextSecondary)
+            }
+            if (listing.isReserved) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = FindAHomeColors.PrimaryDarkBlue.copy(alpha = 0.1f)
+                ) {
+                    Text(
+                        "RENTED",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = FindAHomeColors.PrimaryDarkBlue,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
             }
         }
     }

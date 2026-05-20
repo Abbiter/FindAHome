@@ -12,11 +12,17 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 
-private val Context.notificationDataStore by preferencesDataStore(name = "app_notifications")
+private val Context.notificationDataStore by preferencesDataStore(name = "app_notifications_v2")
 
 class AppNotificationStore(private val context: Context) {
 
     private val key = stringPreferencesKey("notifications_json")
+
+    fun notificationsForUser(userId: String): Flow<List<AppNotification>> =
+        notificationsFlow.map { list ->
+            if (userId.isBlank()) emptyList()
+            else list.filter { it.userId == userId || it.userId.isBlank() }
+        }
 
     val notificationsFlow: Flow<List<AppNotification>> =
         context.notificationDataStore.data.map { prefs ->
@@ -24,23 +30,28 @@ class AppNotificationStore(private val context: Context) {
         }
 
     suspend fun add(
+        userId: String,
         title: String,
         message: String,
-        type: NotificationType = NotificationType.GENERAL
+        type: NotificationType = NotificationType.GENERAL,
+        subtitle: String = ""
     ) {
+        if (userId.isBlank()) return
         context.notificationDataStore.edit { prefs ->
             val current = decode(prefs[key].orEmpty()).toMutableList()
             current.add(
                 0,
                 AppNotification(
                     id = UUID.randomUUID().toString(),
+                    userId = userId,
                     title = title,
                     message = message,
                     timestamp = System.currentTimeMillis(),
-                    type = type
+                    type = type,
+                    subtitle = subtitle
                 )
             )
-            prefs[key] = encode(current.take(50))
+            prefs[key] = encode(current.take(80))
         }
     }
 
@@ -50,8 +61,10 @@ class AppNotificationStore(private val context: Context) {
             arr.put(
                 JSONObject()
                     .put("id", n.id)
+                    .put("userId", n.userId)
                     .put("title", n.title)
                     .put("message", n.message)
+                    .put("subtitle", n.subtitle)
                     .put("timestamp", n.timestamp)
                     .put("type", n.type.name)
             )
@@ -69,8 +82,10 @@ class AppNotificationStore(private val context: Context) {
                     add(
                         AppNotification(
                             id = o.optString("id"),
+                            userId = o.optString("userId"),
                             title = o.optString("title"),
                             message = o.optString("message"),
+                            subtitle = o.optString("subtitle"),
                             timestamp = o.optLong("timestamp"),
                             type = runCatching {
                                 NotificationType.valueOf(o.optString("type"))

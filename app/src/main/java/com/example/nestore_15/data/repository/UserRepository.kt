@@ -1,31 +1,44 @@
 package com.example.nestore_15.data.repository
 
-import android.net.Uri
+import com.example.nestore_15.data.model.User
+import com.example.nestore_15.data.model.UserRole
+import com.example.nestore_15.data.model.VerificationStatus
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
-/**
- * Profile/verification uploads — Storage bypass for assignment builds.
- * Returns local markers so Firestore fields indicate "on file" without hosting files.
- */
-class UserRepository {
-
-    private companion object {
-        const val LOCAL_PROFILE_MARKER = "local://profile_selected"
-        const val LOCAL_VERIFICATION_MARKER = "local://verification_on_file"
-        const val LOCAL_OWNERSHIP_MARKER = "local://ownership_on_file"
+class UserRepository(
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+) {
+    suspend fun getUser(userId: String): User? {
+        if (userId.isBlank()) return null
+        return runCatching {
+            firestore.collection("users").document(userId).get().await().toUserOrNull()
+        }.getOrNull()
     }
+}
 
-    suspend fun uploadProfilePhoto(userId: String, uri: Uri): String {
-        uri // picker used; no cloud upload in assignment mode
-        return LOCAL_PROFILE_MARKER
-    }
-
-    suspend fun uploadVerificationDocument(userId: String, uri: Uri): String {
-        uri
-        return LOCAL_VERIFICATION_MARKER
-    }
-
-    suspend fun uploadOwnershipProof(userId: String, uri: Uri): String {
-        uri
-        return LOCAL_OWNERSHIP_MARKER
-    }
+fun DocumentSnapshot.toUserOrNull(): User? {
+    if (!exists()) return null
+    val isVerified = getBoolean("isVerified") ?: false
+    val verificationStatus = VerificationStatus.fromFirestore(getString("verificationStatus"), isVerified)
+    return User(
+        id = getString("uid") ?: id,
+        email = getString("email").orEmpty(),
+        role = runCatching { UserRole.valueOf(getString("role").orEmpty()) }.getOrDefault(UserRole.STUDENT),
+        isVerified = isVerified,
+        fullName = getString("fullName").orEmpty(),
+        phone = getString("phone").orEmpty(),
+        photoUrl = getString("photoUrl").orEmpty(),
+        verificationStatus = verificationStatus,
+        verificationDocumentUrl = getString("verificationDocumentUrl").orEmpty(),
+        studentInstitution = getString("studentInstitution").orEmpty(),
+        studentId = getString("studentId").orEmpty(),
+        studentPreferredLocation = getString("studentPreferredLocation").orEmpty(),
+        studentBudgetMax = getDouble("studentBudgetMax"),
+        providerBusinessName = getString("providerBusinessName").orEmpty(),
+        providerContactAddress = getString("providerContactAddress").orEmpty(),
+        providerOwnershipProofUrl = getString("providerOwnershipProofUrl").orEmpty(),
+        providerPropertyCount = getLong("providerPropertyCount")?.toInt()
+    )
 }

@@ -37,6 +37,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.nestore_15.ui.components.FindAHomeCenterTopBar
+import com.example.nestore_15.ui.components.ProviderInfoCard
+import com.example.nestore_15.ui.screens.ProviderProfileUi
 import com.example.nestore_15.ui.components.ListingImage
 import com.example.nestore_15.ui.components.OverlayLoading
 import com.example.nestore_15.ui.components.PrimaryOrangeButton
@@ -59,7 +61,8 @@ data class ListingDetailsUi(
     val imageUrls: List<String>,
     val ownerId: String,
     val reservedByCurrentUser: Boolean = false,
-    val reservationRef: String = ""
+    val reservationRef: String = "",
+    val provider: ProviderProfileUi? = null
 )
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -123,6 +126,10 @@ fun ListingDetailsScreen(
                         )
                         DetailInfoRow(Icons.Default.LocationOn, detail.location)
                         DetailInfoRow(Icons.Default.Bed, "${detail.roomCount} room(s)")
+                        detail.provider?.let { provider ->
+                            Spacer(Modifier.height(16.dp))
+                            ProviderInfoCard(provider)
+                        }
                         Spacer(Modifier.height(16.dp))
                         Text(
                             "About this home",

@@ -8,13 +8,15 @@ import com.example.nestore_15.data.model.Property
 import com.example.nestore_15.data.model.PropertyStatus
 import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.repository.PropertyRepository
+import com.example.nestore_15.data.repository.UserRepository
 import com.example.nestore_15.data.repository.toListing
+import com.example.nestore_15.ui.screens.ProviderProfileUi
+import com.example.nestore_15.ui.screens.toProviderProfileUi
 import com.example.nestore_15.ui.screens.ListingDetailsUi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import java.util.Locale
 
 sealed class ListingDetailUiState {
@@ -27,6 +29,7 @@ class ListingDetailViewModel(
     private val listingId: String,
     private val propertyRepository: PropertyRepository,
     private val listingRepository: ListingRepository,
+    private val userRepository: UserRepository,
     private val currentUserId: String? = null
 ) : ViewModel() {
 
@@ -42,13 +45,18 @@ class ListingDetailViewModel(
             _uiState.value = ListingDetailUiState.Loading
             val result = runCatching {
                 val property = propertyRepository.getProperty(listingId)
+                val listing: Listing
+                val detail: ListingDetailsUi
                 if (property != null) {
-                    property.toListing() to property.toDetailsUi()
+                    listing = property.toListing()
+                    detail = property.toDetailsUi(loadProvider(property.ownerId))
                 } else {
-                    val listing = listingRepository.getListingById(listingId)
+                    val legacy = listingRepository.getListingById(listingId)
                         ?: throw IllegalStateException("Listing not found")
-                    listing to listing.toDetailsUi()
+                    listing = legacy
+                    detail = legacy.toDetailsUi(loadProvider(legacy.ownerId))
                 }
+                listing to detail
             }
             _uiState.value = result.fold(
                 onSuccess = { (listing, detail) ->
@@ -61,7 +69,10 @@ class ListingDetailViewModel(
         }
     }
 
-    private fun Property.toDetailsUi(): ListingDetailsUi {
+    private suspend fun loadProvider(ownerId: String): ProviderProfileUi? =
+        userRepository.getUser(ownerId)?.toProviderProfileUi()
+
+    private fun Property.toDetailsUi(provider: ProviderProfileUi?): ListingDetailsUi {
         val statusLabel = when (availabilityStatus) {
             PropertyStatus.AVAILABLE -> "AVAILABLE"
             PropertyStatus.PENDING -> "PENDING"
@@ -81,11 +92,12 @@ class ListingDetailViewModel(
             imageUrls = imageUrls.ifEmpty { listOf("") },
             ownerId = ownerId,
             reservedByCurrentUser = currentUserId != null && reservedBy == currentUserId,
-            reservationRef = reservationRef
+            reservationRef = reservationRef,
+            provider = provider
         )
     }
 
-    private fun Listing.toDetailsUi(): ListingDetailsUi {
+    private fun Listing.toDetailsUi(provider: ProviderProfileUi?): ListingDetailsUi {
         val statusLabel = if (isReserved) "RENTED" else "AVAILABLE"
         return ListingDetailsUi(
             id = id,
@@ -100,7 +112,8 @@ class ListingDetailViewModel(
             imageUrls = listOf(imageUrl).filter { it.isNotBlank() },
             ownerId = ownerId,
             reservedByCurrentUser = currentUserId != null && isReservedBy(currentUserId),
-            reservationRef = reservationRef
+            reservationRef = reservationRef,
+            provider = provider
         )
     }
 
@@ -119,6 +132,7 @@ class ListingDetailViewModel(
                         listingId = listingId,
                         propertyRepository = PropertyRepository(),
                         listingRepository = ListingRepository(),
+                        userRepository = UserRepository(),
                         currentUserId = currentUserId
                     ) as T
                 }

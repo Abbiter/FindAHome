@@ -80,7 +80,8 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow read: if isConversationParticipantById(conversationId);
         allow create: if isConversationParticipantById(conversationId) &&
-          request.resource.data.senderId == request.auth.uid;
+          (request.resource.data.senderId == request.auth.uid ||
+           request.resource.data.senderId == 'system');
         allow update, delete: if false;
       }
     }

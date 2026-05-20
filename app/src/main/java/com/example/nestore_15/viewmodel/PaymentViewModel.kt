@@ -6,9 +6,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.nestore_15.data.model.Listing
 import com.example.nestore_15.data.model.NotificationType
 import com.example.nestore_15.data.preferences.AppNotificationStore
+import com.example.nestore_15.data.repository.ChatRepository
 import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.repository.PropertyRepository
 import com.example.nestore_15.data.model.PropertyStatus
+import com.example.nestore_15.data.repository.UserRepository
 import com.example.nestore_15.data.repository.toListing
 import com.example.nestore_15.ui.screens.PaymentSummaryUi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +30,8 @@ class PaymentViewModel(
     private val listingId: String,
     private val propertyRepository: PropertyRepository,
     private val listingRepository: ListingRepository,
+    private val chatRepository: ChatRepository,
+    private val userRepository: UserRepository,
     private val notificationStore: AppNotificationStore
 ) : ViewModel() {
 
@@ -88,11 +92,43 @@ class PaymentViewModel(
                 } else {
                     listingRepository.reserveListing(listing.id, currentUserId)
                 }
+
+                val studentName = userRepository.getUser(currentUserId)?.fullName?.ifBlank {
+                    userRepository.getUser(currentUserId)?.email?.substringBefore("@")
+                } ?: "A student"
+
                 notificationStore.add(
+                    userId = currentUserId,
                     title = "Reservation confirmed",
-                    message = "${current.summary.title} in ${current.summary.location} — ref $ref",
-                    type = NotificationType.RESERVATION
+                    message = "You reserved ${current.summary.title} in ${current.summary.location}.",
+                    type = NotificationType.RESERVATION,
+                    subtitle = "Ref: $ref"
                 )
+
+                if (listing.ownerId.isNotBlank()) {
+                    notificationStore.add(
+                        userId = listing.ownerId,
+                        title = "Property reserved",
+                        message = "$studentName reserved ${current.summary.title}. It is now marked as rented.",
+                        type = NotificationType.RESERVATION_RECEIVED,
+                        subtitle = "Ref: $ref"
+                    )
+                }
+
+                if (listing.ownerId.isNotBlank()) {
+                    val conversationId = chatRepository.getOrCreateConversation(
+                        propertyId = listing.id,
+                        propertyTitle = current.summary.title,
+                        propertyImageUrl = current.summary.imageUrl,
+                        studentId = currentUserId,
+                        providerId = listing.ownerId
+                    )
+                    chatRepository.sendSystemMessage(
+                        conversationId,
+                        "Reservation confirmed (ref $ref). This listing is now marked as rented for both parties."
+                    )
+                }
+
                 ref
             }
             _uiState.value = result.fold(
@@ -126,6 +162,8 @@ class PaymentViewModel(
                         listingId = listingId,
                         propertyRepository = PropertyRepository(),
                         listingRepository = ListingRepository(),
+                        chatRepository = ChatRepository(),
+                        userRepository = UserRepository(),
                         notificationStore = notificationStore
                     ) as T
                 }

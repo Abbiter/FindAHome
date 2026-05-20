@@ -70,13 +70,18 @@ class ListingMatchNotifier(
         knownListingIds.clear()
         knownListingIds.addAll(currentIds)
 
+        val userId = sessionManager.getCurrentUserId().orEmpty()
+        if (userId.isBlank()) return
+
         newListings.forEach { listing ->
             scope.launch {
                 withContext(Dispatchers.IO) {
                     notificationStore.add(
+                        userId = userId,
                         title = "New matching listing",
                         message = "${listing.title} in ${listing.location}",
-                        type = NotificationType.LISTING_MATCH
+                        type = NotificationType.LISTING_MATCH,
+                        subtitle = "Matches your saved filters"
                     )
                 }
             }

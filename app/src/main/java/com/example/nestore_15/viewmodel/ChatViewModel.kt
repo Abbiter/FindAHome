@@ -7,8 +7,18 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.nestore_15.data.model.ChatMessage
 import com.example.nestore_15.data.repository.ChatRepository
+import com.example.nestore_15.data.repository.UserRepository
+import com.example.nestore_15.ui.screens.toProviderProfileUi
+import com.example.nestore_15.ui.screens.toStudentProfileUi
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+
+data class ChatContactUi(
+    val label: String,
+    val name: String,
+    val detailLine: String,
+    val phoneLine: String
+)
 
 sealed class ChatUiState {
     data object Loading : ChatUiState()
@@ -17,11 +27,48 @@ sealed class ChatUiState {
 }
 
 class ChatViewModel(
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _uiState = MutableLiveData<ChatUiState>(ChatUiState.Loading)
     val uiState: LiveData<ChatUiState> = _uiState
+
+    private val _contact = MutableLiveData<ChatContactUi?>()
+    val contact: LiveData<ChatContactUi?> = _contact
+
+    fun loadContact(conversationId: String, currentUserId: String) {
+        viewModelScope.launch {
+            val conversation = chatRepository.getConversation(conversationId) ?: return@launch
+            val otherId = if (currentUserId == conversation.studentId) {
+                conversation.providerId
+            } else {
+                conversation.studentId
+            }
+            val user = userRepository.getUser(otherId) ?: return@launch
+            _contact.value = if (currentUserId == conversation.studentId) {
+                val p = user.toProviderProfileUi()
+                ChatContactUi(
+                    label = "Property host",
+                    name = p.displayName,
+                    detailLine = listOf(p.businessName, p.email, p.contactAddress)
+                        .filter { it.isNotBlank() }
+                        .joinToString(" · "),
+                    phoneLine = p.phone
+                )
+            } else {
+                val s = user.toStudentProfileUi()
+                ChatContactUi(
+                    label = "Student",
+                    name = s.displayName,
+                    detailLine = listOf(s.institution, s.email)
+                        .filter { it.isNotBlank() }
+                        .joinToString(" · "),
+                    phoneLine = s.phone
+                )
+            }
+        }
+    }
 
     fun observeMessages(chatId: String) {
         _uiState.value = ChatUiState.Loading
@@ -47,11 +94,14 @@ class ChatViewModel(
     }
 
     companion object {
-        fun factory(chatRepository: ChatRepository = ChatRepository()): ViewModelProvider.Factory =
+        fun factory(
+            chatRepository: ChatRepository = ChatRepository(),
+            userRepository: UserRepository = UserRepository()
+        ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return ChatViewModel(chatRepository) as T
+                    return ChatViewModel(chatRepository, userRepository) as T
                 }
             }
     }

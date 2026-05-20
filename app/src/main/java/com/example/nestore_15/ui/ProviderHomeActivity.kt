@@ -107,6 +107,12 @@ class ProviderHomeActivity : ComponentActivity() {
                     onInquiries = {
                         startActivity(Intent(this, ProviderInquiriesActivity::class.java))
                     },
+                    onMessages = {
+                        startActivity(Intent(this, ConversationsActivity::class.java))
+                    },
+                    onNotifications = {
+                        startActivity(Intent(this, NotificationsActivity::class.java))
+                    },
                     onProfile = {
                         startActivity(Intent(this, ProfileActivity::class.java))
                     },

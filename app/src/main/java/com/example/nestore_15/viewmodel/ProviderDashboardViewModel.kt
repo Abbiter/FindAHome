@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 data class ProviderDashboardStats(
     val totalListings: Int = 0,
     val activeListings: Int = 0,
+    val reservedListings: Int = 0,
     val inquiriesCount: Int = 0
 )
 
@@ -57,6 +58,7 @@ class ProviderDashboardViewModel(
                 val stats = ProviderDashboardStats(
                     totalListings = properties.size,
                     activeListings = properties.count { it.availabilityStatus == PropertyStatus.AVAILABLE },
+                    reservedListings = properties.count { it.availabilityStatus == PropertyStatus.RENTED },
                     inquiriesCount = inquiries.size
                 )
 
