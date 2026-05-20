@@ -10,6 +10,15 @@ Add-Type -AssemblyName System.Drawing
 $BrandNavy = [System.Drawing.Color]::FromArgb(255, 0, 36, 98)
 $img = [System.Drawing.Image]::FromFile((Resolve-Path $Source))
 
+# Adaptive icons are masked to a circle — square side ≈ 66% / sqrt(2) ≈ 47% of canvas.
+$AdaptiveSafeRatio = 0.48
+# Monogram crop: top portion of logo (FAH) without small bottom tagline.
+$MonogramHeightRatio = 0.66
+$AdaptiveMonogramFill = 0.88
+
+# Legacy square icons can show more of the full logo.
+$LegacyFillRatio = 0.80
+
 function Save-Png($bmp, $path) {
     New-Item -ItemType Directory -Path (Split-Path $path -Parent) -Force | Out-Null
     $tmp = Join-Path $env:TEMP ("findahome_" + [Guid]::NewGuid().ToString() + ".png")
@@ -18,15 +27,34 @@ function Save-Png($bmp, $path) {
     Move-Item -Force $tmp $path
 }
 
+function Draw-FitRect($g, $image, $srcRect, $canvasSize, $fillRatio) {
+    $maxSide = [int]($canvasSize * $fillRatio)
+    $scale = [Math]::Min($maxSide / $srcRect.Width, $maxSide / $srcRect.Height)
+    $w = [int]($srcRect.Width * $scale)
+    $h = [int]($srcRect.Height * $scale)
+    $x = [int](($canvasSize - $w) / 2)
+    $y = [int](($canvasSize - $h) / 2)
+    $dest = New-Object System.Drawing.Rectangle $x, $y, $w, $h
+    $g.DrawImage($image, $dest, $srcRect, [System.Drawing.GraphicsUnit]::Pixel)
+}
+
+function Get-MonogramRect($image) {
+    $h = [int]($image.Height * $MonogramHeightRatio)
+    return New-Object System.Drawing.Rectangle 0, 0, $image.Width, $h
+}
+
+function Get-FullLogoRect($image) {
+    return New-Object System.Drawing.Rectangle 0, 0, $image.Width, $image.Height
+}
+
 function Save-LauncherLegacy($path, $size) {
     $bmp = New-Object System.Drawing.Bitmap $size, $size
     $g = [System.Drawing.Graphics]::FromImage($bmp)
     $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
     $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+    $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
     $g.Clear($BrandNavy)
-    $inner = [int]($size * 0.72)
-    $offset = [int](($size - $inner) / 2)
-    $g.DrawImage($img, $offset, $offset, $inner, $inner)
+    Draw-FitRect $g $img (Get-FullLogoRect $img) $size $LegacyFillRatio
     $g.Dispose()
     Save-Png $bmp $path
 }
@@ -36,13 +64,10 @@ function Save-AdaptiveForeground($path, $size) {
     $g = [System.Drawing.Graphics]::FromImage($bmp)
     $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
     $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+    $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
     $g.Clear([System.Drawing.Color]::Transparent)
-    $cropH = [int]($img.Height * 0.78)
-    $srcRect = New-Object System.Drawing.Rectangle 0, 0, $img.Width, $cropH
-    $inner = [int]($size * 0.56)
-    $offset = [int](($size - $inner) / 2)
-    $destRect = New-Object System.Drawing.Rectangle $offset, $offset, $inner, $inner
-    $g.DrawImage($img, $destRect, $srcRect, [System.Drawing.GraphicsUnit]::Pixel)
+    $mono = Get-MonogramRect $img
+    Draw-FitRect $g $img $mono $size $AdaptiveMonogramFill
     $g.Dispose()
     Save-Png $bmp $path
 }
@@ -63,4 +88,4 @@ Copy-Item $Source "$res\drawable\branding_logo.png" -Force
 Copy-Item $Source "$res\drawable\splash_logo.png" -Force
 $img.Dispose()
 Pop-Location
-Write-Host "Brand icons updated under app/src/main/res"
+Write-Host "Brand icons updated (adaptive=FAH monogram, legacy=full logo)."
