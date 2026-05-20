@@ -4,6 +4,7 @@ import com.example.nestore_15.data.model.ChatMessage
 import com.example.nestore_15.data.model.ConversationSummary
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.channels.awaitClose
@@ -102,23 +103,11 @@ class ChatRepository(
             .whereArrayContains("participants", currentUserId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    close(error)
+                    trySend(emptyList()).isSuccess
                     return@addSnapshotListener
                 }
                 val rows = snapshot?.documents.orEmpty().mapNotNull { doc ->
-                    ConversationSummary(
-                        id = doc.id,
-                        propertyId = doc.getString("propertyId").orEmpty(),
-                        propertyTitle = doc.getString("propertyTitle").orEmpty(),
-                        propertyImageUrl = doc.getString("propertyImageUrl").orEmpty(),
-                        participants = doc.get("participants") as? List<String> ?: emptyList(),
-                        studentId = doc.getString("studentId").orEmpty(),
-                        providerId = doc.getString("providerId").orEmpty(),
-                        studentName = doc.getString("studentName").orEmpty(),
-                        providerName = doc.getString("providerName").orEmpty(),
-                        lastMessage = doc.getString("lastMessage").orEmpty(),
-                        lastUpdated = (doc.getTimestamp("lastUpdated") ?: Timestamp.now()).toDate().time
-                    )
+                    runCatching { doc.toConversationSummary() }.getOrNull()
                 }.sortedByDescending { it.lastUpdated }
                 trySend(rows).isSuccess
             }
@@ -140,6 +129,22 @@ class ChatRepository(
             providerName = doc.getString("providerName").orEmpty(),
             lastMessage = doc.getString("lastMessage").orEmpty(),
             lastUpdated = (doc.getTimestamp("lastUpdated") ?: Timestamp.now()).toDate().time
+        )
+    }
+
+    private fun DocumentSnapshot.toConversationSummary(): ConversationSummary {
+        return ConversationSummary(
+            id = id,
+            propertyId = getString("propertyId").orEmpty(),
+            propertyTitle = getString("propertyTitle").orEmpty(),
+            propertyImageUrl = getString("propertyImageUrl").orEmpty(),
+            participants = (get("participants") as? List<*>)?.mapNotNull { it as? String } ?: emptyList(),
+            studentId = getString("studentId").orEmpty(),
+            providerId = getString("providerId").orEmpty(),
+            studentName = getString("studentName").orEmpty(),
+            providerName = getString("providerName").orEmpty(),
+            lastMessage = getString("lastMessage").orEmpty(),
+            lastUpdated = (getTimestamp("lastUpdated") ?: Timestamp.now()).toDate().time
         )
     }
 

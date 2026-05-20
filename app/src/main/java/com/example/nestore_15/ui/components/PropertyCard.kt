@@ -2,10 +2,10 @@ package com.example.nestore_15.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
@@ -31,94 +31,84 @@ import java.util.Locale
 fun PropertyCard(
     listing: Listing,
     onClick: () -> Unit,
-    onReserve: () -> Unit,
-    onInquire: () -> Unit,
     modifier: Modifier = Modifier,
     priceLabel: (Double) -> String = { price ->
         val formatted = if (price % 1.0 == 0.0) price.toInt().toString()
         else String.format(Locale.getDefault(), "%.2f", price)
-        "P$formatted / month"
+        "P$formatted"
     }
 ) {
-    val blocked = listing.isReserved
+    val statusLabel = if (listing.isReserved) "RENTED" else "AVAILABLE"
+    val statusBg = if (listing.isReserved) {
+        FindAHomeColors.PendingOrange.copy(alpha = 0.92f)
+    } else {
+        FindAHomeColors.GreenAccent.copy(alpha = 0.92f)
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = CardShape,
         colors = CardDefaults.cardColors(containerColor = FindAHomeColors.CardSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-        border = BorderStroke(0.5.dp, FindAHomeColors.ImageBorder.copy(alpha = 0.15f))
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        border = BorderStroke(0.5.dp, FindAHomeColors.ImageBorder.copy(alpha = 0.12f))
     ) {
         Column {
-            ListingImage(
-                imageRef = listing.imageUrl,
-                contentDescription = listing.title,
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1.1f)
-                    .clip(ImageShape)
-                    .padding(10.dp),
-                contentScale = ContentScale.Crop
-            )
-            Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-                if (listing.isReserved) {
-                    Surface(
-                        color = FindAHomeColors.PendingOrange.copy(alpha = 0.15f),
-                        shape = CardShape
-                    ) {
-                        Text(
-                            "Reserved",
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = FindAHomeColors.OrangeAccent
-                        )
-                    }
+                    .aspectRatio(4f / 3f)
+            ) {
+                ListingImage(
+                    imageRef = listing.imageUrl,
+                    contentDescription = listing.title,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(ImageShape),
+                    contentScale = ContentScale.Crop
+                )
+                Surface(
+                    color = statusBg,
+                    shape = CardShape,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(10.dp)
+                ) {
+                    Text(
+                        statusLabel,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = FindAHomeColors.TextOnPrimary
+                    )
                 }
+            }
+            Column(Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
                 Text(
                     listing.title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
+                    color = FindAHomeColors.PrimaryDarkBlue,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = MaterialTheme.typography.titleSmall.lineHeight
                 )
                 Text(
-                    priceLabel(listing.priceBwp),
-                    style = MaterialTheme.typography.titleSmall,
+                    "${priceLabel(listing.priceBwp)} / month",
+                    style = MaterialTheme.typography.titleMedium,
                     color = FindAHomeColors.OrangeAccent,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 4.dp)
+                    modifier = Modifier.padding(top = 6.dp)
                 )
                 Text(
                     listing.location,
                     style = MaterialTheme.typography.bodySmall,
                     color = FindAHomeColors.TextSecondary,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 4.dp)
                 )
-                Text(
-                    "Available: ${listing.availabilityDate}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = FindAHomeColors.TextSecondary,
-                    modifier = Modifier.padding(top = 2.dp, bottom = 10.dp)
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    PrimaryOrangeButton(
-                        text = "Reserve",
-                        onClick = onReserve,
-                        modifier = Modifier.weight(1f),
-                        enabled = !blocked
-                    )
-                    SecondaryGreenButton(
-                        text = "Inquire",
-                        onClick = onInquire,
-                        modifier = Modifier.weight(1f),
-                        enabled = !blocked
-                    )
-                }
             }
         }
     }

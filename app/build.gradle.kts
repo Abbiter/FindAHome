@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
+    implementation("androidx.compose.foundation:foundation")
     implementation(libs.coil.compose)
 
     implementation("androidx.appcompat:appcompat:1.7.0")

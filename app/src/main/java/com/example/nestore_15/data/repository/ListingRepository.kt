@@ -121,6 +121,13 @@ class ListingRepository(
         awaitClose { registration.remove() }
     }
 
+    suspend fun getListingById(id: String): Listing? {
+        return runCatching {
+            val snap = firestore.collection("listings").document(id).get().await()
+            if (!snap.exists()) null else snap.toListingOrNull()
+        }.getOrNull()
+    }
+
     suspend fun reserveListing(id: String, currentUserId: String): String {
         val reservationRef = UUID.randomUUID().toString()
         val listingRef = firestore.collection("listings").document(id)

@@ -11,14 +11,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.example.nestore_15.data.model.Listing
+import androidx.navigation.NavHostController
 import com.example.nestore_15.ui.navigation.FloatingBottomNavBar
+import com.example.nestore_15.ui.navigation.StudentNavHost
 import com.example.nestore_15.ui.navigation.StudentTab
 import com.example.nestore_15.viewmodel.HomeUiState
 import com.example.nestore_15.viewmodel.ProfileUiState
 
 @Composable
 fun MainScreen(
+    navController: NavHostController,
     homeUiState: HomeUiState,
     profileUiState: ProfileUiState,
     searchQuery: String,
@@ -27,15 +29,14 @@ fun MainScreen(
     verificationDotColor: Color,
     onNotifications: () -> Unit,
     onProfileHeader: () -> Unit,
-    onListingClick: (Listing) -> Unit,
-    onReserve: (Listing) -> Unit,
-    onInquire: (Listing) -> Unit,
     onMapFab: () -> Unit,
     onOpenMessages: () -> Unit,
     onEditProfile: () -> Unit,
     onVerify: () -> Unit,
     onLogout: () -> Unit,
     onChangePassword: () -> Unit,
+    currentUserId: String?,
+    onContactProvider: (ListingDetailsUi) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(StudentTab.HOME) }
@@ -57,18 +58,18 @@ fun MainScreen(
     ) { padding ->
         Box(Modifier.padding(padding)) {
             when (selectedTab) {
-                StudentTab.HOME -> HomeScreen(
-                    uiState = homeUiState,
+                StudentTab.HOME -> StudentNavHost(
+                    navController = navController,
+                    homeUiState = homeUiState,
                     searchQuery = searchQuery,
                     onSearchChange = onSearchChange,
                     onSearchDone = onSearchDone,
                     verificationDotColor = verificationDotColor,
                     onNotifications = onNotifications,
                     onProfile = onProfileHeader,
-                    onListingClick = onListingClick,
-                    onReserve = onReserve,
-                    onInquire = onInquire,
-                    onMapFab = onMapFab
+                    onMapFab = onMapFab,
+                    currentUserId = currentUserId,
+                    onContactProvider = onContactProvider
                 )
                 StudentTab.FAVORITES -> FavoritesScreen()
                 StudentTab.PROFILE -> ProfileScreen(

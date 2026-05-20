@@ -50,8 +50,6 @@ fun HomeScreen(
     onNotifications: () -> Unit,
     onProfile: () -> Unit,
     onListingClick: (Listing) -> Unit,
-    onReserve: (Listing) -> Unit,
-    onInquire: (Listing) -> Unit,
     onMapFab: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -120,8 +118,6 @@ fun HomeScreen(
                                 PropertyCard(
                                     listing = listing,
                                     onClick = { onListingClick(listing) },
-                                    onReserve = { onReserve(listing) },
-                                    onInquire = { onInquire(listing) },
                                     modifier = Modifier.listItemAnimation(index)
                                 )
                             }

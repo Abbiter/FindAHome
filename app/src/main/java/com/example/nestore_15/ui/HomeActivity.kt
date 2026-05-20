@@ -7,7 +7,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -21,16 +20,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.app.ActivityCompat
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import com.example.nestore_15.data.model.Listing
+import androidx.navigation.compose.rememberNavController
 import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.model.VerificationStatus
 import com.example.nestore_15.data.preferences.ListingFilterPreferencesStore
+import com.example.nestore_15.data.repository.ChatRepository
 import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.notifications.ListingMatchNotifier
+import com.example.nestore_15.ui.screens.ListingDetailsUi
 import com.example.nestore_15.ui.screens.MainScreen
 import com.example.nestore_15.ui.theme.FindAHomeColors
 import com.example.nestore_15.ui.theme.FindAHomeTheme
@@ -66,6 +67,7 @@ class HomeActivity : ComponentActivity() {
         ProfileViewModel.factory(sessionManager)
     }
     private val sessionManager by lazy { SessionManager(applicationContext) }
+    private val chatRepository by lazy { ChatRepository() }
     private val listingRepository by lazy { ListingRepository() }
     private val filterStore by lazy { ListingFilterPreferencesStore(applicationContext) }
     private val listingMatchNotifier by lazy {
@@ -116,6 +118,7 @@ class HomeActivity : ComponentActivity() {
 
     private fun initializeStudentUi() {
         setContent {
+            val navController = rememberNavController()
             val homeState by viewModel.uiState.observeAsState(HomeUiState.Loading)
             val profileState by profileViewModel.uiState.observeAsState(ProfileUiState.Loading)
             val currentUser by sessionManager.getCurrentUser().collectAsStateWithLifecycle(initialValue = null)
@@ -129,6 +132,7 @@ class HomeActivity : ComponentActivity() {
 
             FindAHomeTheme {
                 MainScreen(
+                    navController = navController,
                     homeUiState = homeState ?: HomeUiState.Loading,
                     profileUiState = profileState ?: ProfileUiState.Loading,
                     searchQuery = searchQuery,
@@ -144,9 +148,6 @@ class HomeActivity : ComponentActivity() {
                     onProfileHeader = {
                         startActivity(Intent(this@HomeActivity, ProfileActivity::class.java))
                     },
-                    onListingClick = ::openListingDetail,
-                    onReserve = ::onReserveRequested,
-                    onInquire = ::onInquireRequested,
                     onMapFab = { handleDepositAction() },
                     onOpenMessages = {
                         startActivity(Intent(this@HomeActivity, ConversationsActivity::class.java))
@@ -158,7 +159,9 @@ class HomeActivity : ComponentActivity() {
                         startActivity(Intent(this@HomeActivity, VerificationActivity::class.java))
                     },
                     onLogout = { confirmLogout() },
-                    onChangePassword = { sendPasswordReset(profileState) }
+                    onChangePassword = { sendPasswordReset(profileState) },
+                    currentUserId = sessionManager.getCurrentUserId(),
+                    onContactProvider = ::contactProvider
                 )
             }
         }
@@ -173,6 +176,39 @@ class HomeActivity : ComponentActivity() {
         )
 
         listingMatchNotifier.start(lifecycleScope)
+    }
+
+    private fun contactProvider(detail: ListingDetailsUi) {
+        val studentId = sessionManager.getCurrentUserId()
+        if (studentId.isNullOrBlank()) {
+            Toast.makeText(this, "Please log in to continue", Toast.LENGTH_SHORT).show()
+            return
+        }
+        lifecycleScope.launch {
+            runCatching {
+                chatRepository.getOrCreateConversation(
+                    propertyId = detail.id,
+                    propertyTitle = detail.title,
+                    propertyImageUrl = detail.imageUrls.firstOrNull().orEmpty(),
+                    studentId = studentId,
+                    providerId = detail.ownerId
+                )
+            }.onSuccess { conversationId ->
+                startActivity(
+                    Intent(this@HomeActivity, ChatActivity::class.java).apply {
+                        putExtra(ChatActivity.EXTRA_CONVERSATION_ID, conversationId)
+                        putExtra(ChatActivity.EXTRA_PROPERTY_ID, detail.id)
+                        putExtra(ChatActivity.EXTRA_PROPERTY_TITLE, detail.title)
+                        putExtra(ChatActivity.EXTRA_PROPERTY_IMAGE_URL, detail.imageUrls.firstOrNull().orEmpty())
+                        putExtra(ChatActivity.EXTRA_PROPERTY_LOCATION, detail.location)
+                        putExtra(ChatActivity.EXTRA_CURRENT_USER_ID, studentId)
+                        putExtra(ChatActivity.EXTRA_RETURN_TO_PROPERTY, false)
+                    }
+                )
+            }.onFailure {
+                Toast.makeText(this@HomeActivity, it.message ?: "Could not start chat", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun confirmLogout() {
@@ -212,110 +248,14 @@ class HomeActivity : ComponentActivity() {
     }
 
     private fun handleDepositAction() {
-        guardRestrictedFeatureAccess {
-            Toast.makeText(this, "Deposit feature coming soon", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun guardRestrictedFeatureAccess(onAccessGranted: () -> Unit) {
         lifecycleScope.launch {
             val isLoggedIn = sessionManager.isLoggedIn.first()
             if (!isLoggedIn) {
                 Toast.makeText(this@HomeActivity, "Please log in to continue", Toast.LENGTH_SHORT).show()
                 return@launch
             }
-            val isVerified = sessionManager.isVerified.first()
-            if (!isVerified) {
-                Toast.makeText(this@HomeActivity, "Please verify your account to continue", Toast.LENGTH_SHORT).show()
-                return@launch
-            }
-            onAccessGranted()
+            Toast.makeText(this@HomeActivity, "Deposit feature coming soon", Toast.LENGTH_SHORT).show()
         }
-    }
-
-    private fun onReserveRequested(listing: Listing) {
-        if (listing.isReserved) {
-            Toast.makeText(this, "Listing is already reserved", Toast.LENGTH_SHORT).show()
-            return
-        }
-        guardRestrictedFeatureAccess {
-            val currentUserId = sessionManager.getCurrentUserId()
-            if (currentUserId == null) {
-                Toast.makeText(this, "Please log in to continue", Toast.LENGTH_SHORT).show()
-                return@guardRestrictedFeatureAccess
-            }
-            viewModel.reserveListing(listing, currentUserId) { result ->
-                result.onSuccess { reservationRef ->
-                    startActivity(
-                        Intent(this, PaymentSuccessActivity::class.java).apply {
-                            putExtra(PaymentSuccessActivity.EXTRA_RESERVATION_REF, reservationRef)
-                        }
-                    )
-                }.onFailure {
-                    Toast.makeText(this, "Listing already reserved", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-
-    private fun onInquireRequested(listing: Listing) {
-        guardRestrictedFeatureAccess {
-            val input = EditText(this)
-            input.hint = "Your message to the host"
-            MaterialAlertDialogBuilder(this)
-                .setTitle("Inquire about this home")
-                .setView(input)
-                .setPositiveButton("Send") { _, _ ->
-                    val message = input.text.toString().trim()
-                    if (message.isEmpty()) {
-                        Toast.makeText(this, "Please enter a message", Toast.LENGTH_SHORT).show()
-                        return@setPositiveButton
-                    }
-                    val studentId = sessionManager.getCurrentUserId()
-                    if (studentId.isNullOrBlank()) {
-                        Toast.makeText(this, "Please log in to continue", Toast.LENGTH_SHORT).show()
-                        return@setPositiveButton
-                    }
-                    val authUser = FirebaseAuth.getInstance().currentUser
-                    val rawName = authUser?.displayName?.takeIf { it.isNotBlank() }
-                        ?: authUser?.email?.substringBefore("@").orEmpty()
-                    val studentName = if (rawName.isBlank()) "Student" else rawName
-                    viewModel.submitInquiry(listing, message, studentId, studentName) { result ->
-                        result.onSuccess {
-                            Toast.makeText(this, "Inquiry sent", Toast.LENGTH_SHORT).show()
-                        }.onFailure {
-                            Toast.makeText(this, it.message ?: "Could not send inquiry", Toast.LENGTH_LONG).show()
-                        }
-                    }
-                }
-                .setNegativeButton(android.R.string.cancel, null)
-                .show()
-        }
-    }
-
-    private fun openListingDetail(listing: Listing) {
-        startActivity(
-            Intent(this, StudentListingDetailActivity::class.java).apply {
-                putExtra(StudentListingDetailActivity.EXTRA_PROPERTY_ID, listing.id)
-                putExtra(StudentListingDetailActivity.EXTRA_PROVIDER_ID, listing.ownerId)
-                putExtra(StudentListingDetailActivity.EXTRA_PROPERTY_TITLE, listing.title)
-                putExtra(StudentListingDetailActivity.EXTRA_PROPERTY_IMAGE_URL, listing.imageUrl)
-                putExtra(
-                    StudentListingDetailActivity.EXTRA_PROPERTY_PRICE,
-                    getString(R.string.listing_price_monthly, formatPrice(listing.priceBwp))
-                )
-                putExtra(StudentListingDetailActivity.EXTRA_PROPERTY_LOCATION, listing.location)
-                putExtra(
-                    StudentListingDetailActivity.EXTRA_PROPERTY_AVAILABILITY,
-                    getString(R.string.listing_available_on, listing.availabilityDate)
-                )
-            }
-        )
-    }
-
-    private fun formatPrice(price: Double): String {
-        return if (price % 1.0 == 0.0) price.toInt().toString()
-        else String.format(java.util.Locale.getDefault(), "%.2f", price)
     }
 
     private fun setupNotificationEntry() {

@@ -75,6 +75,10 @@
             android:name=".ui.PaymentSuccessActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.PaymentActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".ui.ChatActivity"
             android:exported="false" />
         <activity
