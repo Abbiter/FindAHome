@@ -24,6 +24,10 @@ import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.ui.screens.ProviderHomeScreen
 import com.example.nestore_15.ui.theme.FindAHomeTheme
+import com.example.nestore_15.data.repository.PropertyRepository
+import com.example.nestore_15.data.repository.UserRepository
+import com.example.nestore_15.notifications.AppNotificationHelper
+import com.example.nestore_15.notifications.ProviderReservationNotifier
 import com.example.nestore_15.viewmodel.ProviderDashboardUiState
 import com.example.nestore_15.viewmodel.ProviderDashboardViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -39,7 +43,7 @@ class ProviderHomeActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            Toast.makeText(this, "You'll get alerts when new listings match your filters.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "You'll get alerts for reservations and messages.", Toast.LENGTH_SHORT).show()
         } else {
             MaterialAlertDialogBuilder(this)
                 .setTitle("Notifications off")
@@ -53,6 +57,13 @@ class ProviderHomeActivity : ComponentActivity() {
     private val sessionManager by lazy { SessionManager(applicationContext) }
     private val viewModel: ProviderDashboardViewModel by viewModels {
         ProviderDashboardViewModel.factory()
+    }
+    private val reservationNotifier by lazy {
+        ProviderReservationNotifier(
+            PropertyRepository(),
+            UserRepository(),
+            AppNotificationHelper(applicationContext)
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,7 +102,9 @@ class ProviderHomeActivity : ComponentActivity() {
         val ownerId = sessionManager.getCurrentUserId()
         if (!ownerId.isNullOrBlank()) {
             viewModel.loadDashboard(ownerId)
+            reservationNotifier.start(lifecycleScope, ownerId)
         }
+        maybeRequestNotificationPermission()
 
         setContent {
             val state by viewModel.uiState.observeAsState(ProviderDashboardUiState())
@@ -108,6 +121,7 @@ class ProviderHomeActivity : ComponentActivity() {
                         startActivity(Intent(this, ConversationsActivity::class.java))
                     },
                     onNotifications = {
+                        maybeRequestNotificationPermission()
                         startActivity(Intent(this, NotificationsActivity::class.java))
                     },
                     onProfile = {
@@ -146,6 +160,15 @@ class ProviderHomeActivity : ComponentActivity() {
     private fun formatPrice(price: Double): String {
         return if (price % 1.0 == 0.0) price.toInt().toString()
         else String.format(Locale.getDefault(), "%.2f", price)
+    }
+
+    private fun maybeRequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
 
     private fun openAppNotificationSettings() {

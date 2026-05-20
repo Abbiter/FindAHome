@@ -21,9 +21,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.nestore_15.ui.components.BrandLogo
 import com.example.nestore_15.data.model.RegistrationRole
 import com.example.nestore_15.ui.components.EmailField
 import com.example.nestore_15.ui.components.NameField
@@ -58,8 +60,14 @@ fun RegisterScreen(
             .background(FindAHomeColors.BackgroundSoft)
             .imePadding()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp)
+            .padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        BrandLogo(
+            modifier = Modifier.padding(bottom = 12.dp),
+            height = 100.dp,
+            width = 200.dp
+        )
         Text(
             "Create your account",
             style = MaterialTheme.typography.headlineMedium,

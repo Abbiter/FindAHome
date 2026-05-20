@@ -1,17 +1,19 @@
 package com.example.nestore_15.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.nestore_15.data.model.Listing
 import com.example.nestore_15.data.model.NotificationType
-import com.example.nestore_15.data.preferences.AppNotificationStore
+import com.example.nestore_15.data.model.PropertyStatus
 import com.example.nestore_15.data.repository.ChatRepository
 import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.repository.PropertyRepository
-import com.example.nestore_15.data.model.PropertyStatus
 import com.example.nestore_15.data.repository.UserRepository
 import com.example.nestore_15.data.repository.toListing
+import com.example.nestore_15.notifications.AppNotificationHelper
+import com.example.nestore_15.notifications.ChatMessageNotifier
 import com.example.nestore_15.ui.screens.PaymentSummaryUi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,7 +34,8 @@ class PaymentViewModel(
     private val listingRepository: ListingRepository,
     private val chatRepository: ChatRepository,
     private val userRepository: UserRepository,
-    private val notificationStore: AppNotificationStore
+    private val notificationHelper: AppNotificationHelper,
+    private val chatMessageNotifier: ChatMessageNotifier
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<PaymentUiState>(PaymentUiState.Loading)
@@ -93,11 +96,13 @@ class PaymentViewModel(
                     listingRepository.reserveListing(listing.id, currentUserId)
                 }
 
-                val studentName = userRepository.getUser(currentUserId)?.fullName?.ifBlank {
-                    userRepository.getUser(currentUserId)?.email?.substringBefore("@")
-                } ?: "A student"
+                val property = propertyRepository.getProperty(listing.id)
+                val ownerId = listing.ownerId.ifBlank { property?.ownerId.orEmpty() }
 
-                notificationStore.add(
+                val studentName = userRepository.getUser(currentUserId)?.displayNameOrEmail()
+                    ?: "A student"
+
+                notificationHelper.notifyUser(
                     userId = currentUserId,
                     title = "Reservation confirmed",
                     message = "You reserved ${current.summary.title} in ${current.summary.location}.",
@@ -105,9 +110,9 @@ class PaymentViewModel(
                     subtitle = "Ref: $ref"
                 )
 
-                if (listing.ownerId.isNotBlank()) {
-                    notificationStore.add(
-                        userId = listing.ownerId,
+                if (ownerId.isNotBlank() && ownerId != currentUserId) {
+                    notificationHelper.notifyUser(
+                        userId = ownerId,
                         title = "Property reserved",
                         message = "$studentName reserved ${current.summary.title}. It is now marked as rented.",
                         type = NotificationType.RESERVATION_RECEIVED,
@@ -115,18 +120,24 @@ class PaymentViewModel(
                     )
                 }
 
-                if (listing.ownerId.isNotBlank()) {
-                    val conversationId = chatRepository.getOrCreateConversation(
-                        propertyId = listing.id,
-                        propertyTitle = current.summary.title,
-                        propertyImageUrl = current.summary.imageUrl,
-                        studentId = currentUserId,
-                        providerId = listing.ownerId
-                    )
-                    chatRepository.sendSystemMessage(
-                        conversationId,
-                        "Reservation confirmed (ref $ref). This listing is now marked as rented for both parties."
-                    )
+                if (ownerId.isNotBlank()) {
+                    runCatching {
+                        val conversationId = chatRepository.getOrCreateConversation(
+                            propertyId = listing.id,
+                            propertyTitle = current.summary.title,
+                            propertyImageUrl = current.summary.imageUrl,
+                            studentId = currentUserId,
+                            providerId = ownerId
+                        )
+                        val systemText =
+                            "Reservation confirmed (ref $ref). This listing is now marked as rented for both parties."
+                        chatRepository.sendSystemMessage(conversationId, systemText)
+                        chatMessageNotifier.notifyRecipients(
+                            conversationId = conversationId,
+                            senderId = ChatRepository.SYSTEM_SENDER_ID,
+                            messagePreview = systemText
+                        )
+                    }
                 }
 
                 ref
@@ -154,17 +165,23 @@ class PaymentViewModel(
     }
 
     companion object {
-        fun factory(listingId: String, notificationStore: AppNotificationStore): ViewModelProvider.Factory =
+        fun factory(listingId: String, appContext: Context): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    val helper = AppNotificationHelper(appContext)
                     return PaymentViewModel(
                         listingId = listingId,
                         propertyRepository = PropertyRepository(),
                         listingRepository = ListingRepository(),
                         chatRepository = ChatRepository(),
                         userRepository = UserRepository(),
-                        notificationStore = notificationStore
+                        notificationHelper = helper,
+                        chatMessageNotifier = ChatMessageNotifier(
+                            ChatRepository(),
+                            UserRepository(),
+                            helper
+                        )
                     ) as T
                 }
             }

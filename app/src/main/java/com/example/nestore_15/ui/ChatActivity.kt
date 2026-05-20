@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 
 class ChatActivity : AppCompatActivity() {
 
-    private val viewModel: ChatViewModel by viewModels { ChatViewModel.factory() }
+    private val viewModel: ChatViewModel by viewModels { ChatViewModel.factory(applicationContext) }
     private lateinit var messagesRecyclerView: RecyclerView
     private lateinit var messageInput: EditText
     private lateinit var sendButton: Button

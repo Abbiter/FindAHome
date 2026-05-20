@@ -108,7 +108,7 @@ fun StudentNavHost(
         ) { entry ->
             val listingId = entry.arguments?.getString("listingId").orEmpty()
             val paymentViewModel: PaymentViewModel = viewModel(
-                factory = PaymentViewModel.factory(listingId, notificationStore)
+                factory = PaymentViewModel.factory(listingId, context.applicationContext)
             )
             val paymentState by paymentViewModel.uiState.collectAsState()
 

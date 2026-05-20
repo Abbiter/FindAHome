@@ -1,5 +1,6 @@
 package com.example.nestore_15.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -8,6 +9,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.nestore_15.data.model.ChatMessage
 import com.example.nestore_15.data.repository.ChatRepository
 import com.example.nestore_15.data.repository.UserRepository
+import com.example.nestore_15.notifications.AppNotificationHelper
+import com.example.nestore_15.notifications.ChatMessageNotifier
 import com.example.nestore_15.ui.screens.toProviderProfileUi
 import com.example.nestore_15.ui.screens.toStudentProfileUi
 import kotlinx.coroutines.flow.collectLatest
@@ -28,7 +31,8 @@ sealed class ChatUiState {
 
 class ChatViewModel(
     private val chatRepository: ChatRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val chatMessageNotifier: ChatMessageNotifier
 ) : ViewModel() {
 
     private val _uiState = MutableLiveData<ChatUiState>(ChatUiState.Loading)
@@ -89,20 +93,28 @@ class ChatViewModel(
         viewModelScope.launch {
             runCatching {
                 chatRepository.sendMessage(chatId, senderId, clean)
+                chatMessageNotifier.notifyRecipients(chatId, senderId, clean)
             }
         }
     }
 
     companion object {
-        fun factory(
-            chatRepository: ChatRepository = ChatRepository(),
-            userRepository: UserRepository = UserRepository()
-        ): ViewModelProvider.Factory =
-            object : ViewModelProvider.Factory {
+        fun factory(appContext: Context): ViewModelProvider.Factory {
+            val helper = AppNotificationHelper(appContext)
+            return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return ChatViewModel(chatRepository, userRepository) as T
+                    return ChatViewModel(
+                        chatRepository = ChatRepository(),
+                        userRepository = UserRepository(),
+                        chatMessageNotifier = ChatMessageNotifier(
+                            ChatRepository(),
+                            UserRepository(),
+                            helper
+                        )
+                    ) as T
                 }
             }
+        }
     }
 }

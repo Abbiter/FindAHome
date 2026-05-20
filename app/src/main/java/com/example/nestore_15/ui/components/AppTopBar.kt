@@ -1,9 +1,12 @@
 package com.example.nestore_15.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -26,7 +29,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.nestore_15.R
 import com.example.nestore_15.ui.theme.FindAHomeColors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,11 +52,21 @@ fun FindAHomeTopAppBar(
         TopAppBar(
             modifier = Modifier.shadow(4.dp),
             title = {
-                Text(
-                    text = title,
-                    color = FindAHomeColors.TextOnPrimary,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(R.drawable.branding_logo),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .padding(end = 8.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                    Text(
+                        text = title,
+                        color = FindAHomeColors.TextOnPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             },
             navigationIcon = {
                 when {

@@ -8,7 +8,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import com.example.nestore_15.data.preferences.AppNotificationStore
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.ui.screens.PaymentScreen
 import com.example.nestore_15.ui.theme.FindAHomeTheme
@@ -29,9 +28,8 @@ class PaymentActivity : ComponentActivity() {
             return
         }
 
-        val notificationStore = AppNotificationStore(applicationContext)
         val viewModel: PaymentViewModel by viewModels {
-            PaymentViewModel.factory(listingId, notificationStore)
+            PaymentViewModel.factory(listingId, applicationContext)
         }
 
         setContent {

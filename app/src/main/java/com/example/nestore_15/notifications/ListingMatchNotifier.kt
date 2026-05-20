@@ -94,8 +94,8 @@ class ListingMatchNotifier(
         val title = "New matching listing"
         val body = "${listing.title} in ${listing.location}"
 
-        val notification = NotificationCompat.Builder(context, LISTING_MATCH_CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+        val notification = NotificationCompat.Builder(context, AppNotificationHelper.CHANNEL_LISTINGS)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(body)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -116,7 +116,4 @@ class ListingMatchNotifier(
         }
     }
 
-    companion object {
-        const val LISTING_MATCH_CHANNEL_ID = "listing_match_channel"
-    }
 }

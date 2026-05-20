@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
@@ -24,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.nestore_15.ui.components.BrandLogo
 import com.example.nestore_15.ui.components.EmailField
 import com.example.nestore_15.ui.components.OutlinedBlueButton
 import com.example.nestore_15.ui.components.PasswordField
@@ -52,7 +54,13 @@ fun LoginScreen(
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(24.dp))
+        BrandLogo(
+            modifier = Modifier.size(140.dp),
+            height = 140.dp,
+            width = 140.dp
+        )
+        Spacer(Modifier.height(20.dp))
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = CardShape,
@@ -60,12 +68,12 @@ fun LoginScreen(
             elevation = CardDefaults.cardElevation(8.dp)
         ) {
             Column(
-                Modifier.padding(horizontal = 28.dp, vertical = 36.dp),
+                Modifier.padding(horizontal = 28.dp, vertical = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "Find A Home",
-                    style = MaterialTheme.typography.headlineLarge,
+                    "Sign in",
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = FindAHomeColors.PrimaryDarkBlue
                 )
@@ -74,7 +82,7 @@ fun LoginScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = FindAHomeColors.TextSecondary,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
+                    modifier = Modifier.padding(top = 8.dp, bottom = 28.dp)
                 )
 
                 EmailField(email, { email = it })
