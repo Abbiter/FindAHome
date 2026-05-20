@@ -2,29 +2,28 @@ package com.example.nestore_15.ui
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.ProgressBar
-import android.widget.TextView
+import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
-import com.example.nestore_15.R
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import com.example.nestore_15.data.model.UserRole
+import com.example.nestore_15.ui.screens.SplashScreen
+import com.example.nestore_15.ui.theme.FindAHomeTheme
 import com.example.nestore_15.viewmodel.SplashDestination
 import com.example.nestore_15.viewmodel.SplashUiState
 import com.example.nestore_15.viewmodel.SplashViewModel
-import com.google.android.material.button.MaterialButton
 
-class SplashActivity : AppCompatActivity() {
+class SplashActivity : ComponentActivity() {
 
     private val viewModel: SplashViewModel by viewModels()
     private var hasNavigatedAway = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_splash)
+        enableEdgeToEdge()
 
         onBackPressedDispatcher.addCallback(
             this,
@@ -37,44 +36,30 @@ class SplashActivity : AppCompatActivity() {
             }
         )
 
-        findViewById<MaterialButton>(R.id.btnSplashRetry).setOnClickListener {
-            showLoading()
-            viewModel.startStartupFlow()
+        setContent {
+            val state by viewModel.uiState.observeAsState(SplashUiState.Loading)
+            FindAHomeTheme {
+                SplashScreen(
+                    isLoading = state is SplashUiState.Loading,
+                    errorMessage = (state as? SplashUiState.ConnectivityIssue)?.message,
+                    onRetry = { viewModel.startStartupFlow() }
+                )
+            }
         }
 
         viewModel.uiState.observe(this) { state ->
-            when (state) {
-                SplashUiState.Loading -> showLoading()
-                is SplashUiState.Ready -> {
-                    if (hasNavigatedAway) return@observe
-                    hasNavigatedAway = true
-                    showLoading()
-                    navigateAndFinish(state.destination)
-                }
-                is SplashUiState.ConnectivityIssue -> showError(state.message)
+            if (state is SplashUiState.Ready && !hasNavigatedAway) {
+                hasNavigatedAway = true
+                navigateAndFinish(state.destination)
             }
         }
 
         viewModel.startStartupFlow()
     }
 
-    private fun showLoading() {
-        findViewById<ImageView>(R.id.splashLogo).visibility = View.VISIBLE
-        findViewById<ProgressBar>(R.id.splashProgress).visibility = View.VISIBLE
-        findViewById<LinearLayout>(R.id.splashErrorContainer).visibility = View.GONE
-    }
-
-    private fun showError(message: String) {
-        findViewById<ProgressBar>(R.id.splashProgress).visibility = View.GONE
-        findViewById<LinearLayout>(R.id.splashErrorContainer).visibility = View.VISIBLE
-        findViewById<TextView>(R.id.tvSplashError).text =
-            getString(R.string.splash_connection_issue, message)
-    }
-
     private fun navigateAndFinish(destination: SplashDestination) {
         val intent = when (destination) {
-            is SplashDestination.Login ->
-                Intent(this, LoginActivity::class.java)
+            is SplashDestination.Login -> Intent(this, LoginActivity::class.java)
             is SplashDestination.Home -> {
                 val destClass = when (destination.role) {
                     UserRole.STUDENT -> HomeActivity::class.java

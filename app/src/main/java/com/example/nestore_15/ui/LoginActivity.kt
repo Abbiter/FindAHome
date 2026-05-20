@@ -2,25 +2,22 @@ package com.example.nestore_15.ui
 
 import android.content.Intent
 import android.os.Bundle
-import android.text.method.HideReturnsTransformationMethod
-import android.text.method.PasswordTransformationMethod
-import android.view.MotionEvent
-import android.widget.Button
-import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
-import com.example.nestore_15.R
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.session.SessionManager
+import com.example.nestore_15.ui.screens.LoginScreen
+import com.example.nestore_15.ui.theme.FindAHomeTheme
 import com.example.nestore_15.viewmodel.LoginError
 import com.example.nestore_15.viewmodel.LoginUiState
 import com.example.nestore_15.viewmodel.LoginViewModel
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 
-class LoginActivity : AppCompatActivity() {
+class LoginActivity : ComponentActivity() {
 
     private val sessionManager by lazy { SessionManager(applicationContext) }
     private val viewModel: LoginViewModel by viewModels {
@@ -29,36 +26,33 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
-        window.setFlags(
-            android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-            android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-        )
-
-        setContentView(R.layout.login)
-
-        val email = findViewById<EditText>(R.id.emailInput)
-        val password = findViewById<EditText>(R.id.passwordInput)
-        val loginBtn = findViewById<Button>(R.id.loginBtn)
-        val registerBtn = findViewById<Button>(R.id.registerBtn)
-        setupPasswordVisibilityToggle(password)
+        setContent {
+            val state by viewModel.uiState.observeAsState(LoginUiState.Idle)
+            FindAHomeTheme {
+                LoginScreen(
+                    isLoading = state is LoginUiState.Loading,
+                    onLogin = { email, password -> viewModel.submitLogin(email, password) },
+                    onRegister = {
+                        startActivity(Intent(this@LoginActivity, RegisterActivity::class.java))
+                    }
+                )
+            }
+        }
 
         viewModel.uiState.observe(this) { state ->
             when (state) {
-                LoginUiState.Idle -> Unit
-                LoginUiState.Loading -> Unit
+                LoginUiState.Idle, LoginUiState.Loading -> Unit
                 is LoginUiState.Success -> {
                     Toast.makeText(this, "Welcome to Find A Home!", Toast.LENGTH_SHORT).show()
                     viewModel.acknowledgeState()
-                    lifecycleScope.launch {
-                        val role = state.role
-                        val destination = when (role) {
-                            UserRole.STUDENT -> HomeActivity::class.java
-                            UserRole.PROVIDER -> ProviderHomeActivity::class.java
-                        }
-                        startActivity(Intent(this@LoginActivity, destination))
-                        finish()
+                    val destination = when (state.role) {
+                        UserRole.STUDENT -> HomeActivity::class.java
+                        UserRole.PROVIDER -> ProviderHomeActivity::class.java
                     }
+                    startActivity(Intent(this, destination))
+                    finish()
                 }
                 is LoginUiState.Error -> {
                     val message = when (state.reason) {
@@ -69,40 +63,6 @@ class LoginActivity : AppCompatActivity() {
                     viewModel.acknowledgeState()
                 }
             }
-        }
-
-        loginBtn.setOnClickListener {
-            viewModel.submitLogin(email.text.toString(), password.text.toString())
-        }
-
-        registerBtn.setOnClickListener {
-            try {
-                startActivity(Intent(this, RegisterActivity::class.java))
-            } catch (e: Exception) {
-                android.util.Log.e("NESTORA_DEBUG", "Transition failed: ${e.message}")
-                Toast.makeText(this, "Navigation Error", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    private fun setupPasswordVisibilityToggle(passwordInput: EditText) {
-        var isVisible = false
-        passwordInput.setOnTouchListener { _, event ->
-            if (event.action == MotionEvent.ACTION_UP) {
-                val drawableEnd = 2
-                val tappedEnd = event.rawX >= (passwordInput.right - passwordInput.compoundPaddingEnd)
-                if (tappedEnd && passwordInput.compoundDrawables[drawableEnd] != null) {
-                    isVisible = !isVisible
-                    passwordInput.transformationMethod = if (isVisible) {
-                        HideReturnsTransformationMethod.getInstance()
-                    } else {
-                        PasswordTransformationMethod.getInstance()
-                    }
-                    passwordInput.setSelection(passwordInput.text?.length ?: 0)
-                    return@setOnTouchListener true
-                }
-            }
-            false
         }
     }
 }

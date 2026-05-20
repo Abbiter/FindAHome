@@ -10,8 +10,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.lifecycleScope
-import com.bumptech.glide.Glide
 import com.example.nestore_15.R
+import com.example.nestore_15.data.util.ListingImageResolver
+import com.example.nestore_15.data.util.loadListingImage
 import com.example.nestore_15.data.model.Property
 import com.example.nestore_15.data.model.PropertyStatus
 import com.example.nestore_15.data.repository.PropertyRepository
@@ -107,12 +108,7 @@ class ProviderListingDetailActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvDetailStatus).text = intent.getStringExtra(EXTRA_STATUS).orEmpty()
         findViewById<TextView>(R.id.tvDetailRooms).visibility = View.GONE
         findViewById<TextView>(R.id.tvDetailDescription).visibility = View.GONE
-        Glide.with(this)
-            .load(intent.getStringExtra(EXTRA_IMAGE_URL))
-            .placeholder(R.drawable.ic_launcher_background)
-            .error(R.drawable.ic_launcher_background)
-            .centerCrop()
-            .into(image)
+        image.loadListingImage(intent.getStringExtra(EXTRA_IMAGE_URL))
     }
 
     private fun bindProperty(p: Property) {
@@ -128,12 +124,7 @@ class ProviderListingDetailActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvDetailRooms).text = "${p.roomCount} rooms"
         findViewById<TextView>(R.id.tvDetailDescription).visibility = View.VISIBLE
         findViewById<TextView>(R.id.tvDetailDescription).text = p.description.ifBlank { "No description" }
-        Glide.with(this)
-            .load(p.imageUrls.firstOrNull())
-            .placeholder(R.drawable.ic_launcher_background)
-            .error(R.drawable.ic_launcher_background)
-            .centerCrop()
-            .into(image)
+        image.loadListingImage(ListingImageResolver.primaryFromList(p.imageUrls))
     }
 
     private fun wireActions(ownerId: String, p: Property) {

@@ -7,6 +7,7 @@
     <string name="listing_status_reserved">Reserved</string>
     <string name="listing_price_monthly_sample">P1200 / month</string>
     <string name="listing_available_on_sample">Available: 12 May</string>
+    <string name="splash_tagline">Your Next Home, Just a Tap Away</string>
     <string name="splash_retry">Retry</string>
     <string name="splash_connection_issue">Connection issue. %1$s</string>
     <string name="cd_notifications">Alerts and notifications</string>

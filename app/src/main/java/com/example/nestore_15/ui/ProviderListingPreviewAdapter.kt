@@ -8,8 +8,8 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.example.nestore_15.R
+import com.example.nestore_15.data.util.loadListingImage
 import com.example.nestore_15.data.model.Listing
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -52,12 +52,7 @@ class ProviderListingPreviewAdapter(
         holder.status.setTextColor(ContextCompat.getColor(context, status.textColor))
         holder.status.backgroundTintList = ContextCompat.getColorStateList(context, status.bgColor)
 
-        Glide.with(holder.itemView.context)
-            .load(item.imageUrl)
-            .placeholder(R.drawable.ic_launcher_background)
-            .error(R.drawable.ic_launcher_background)
-            .centerCrop()
-            .into(holder.image)
+        holder.image.loadListingImage(item.imageUrl)
 
         holder.itemView.alpha = 1f
         holder.itemView.isEnabled = true

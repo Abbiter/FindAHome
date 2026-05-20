@@ -2,10 +2,10 @@ package com.example.nestore_15.data.repository
 
 import android.net.Uri
 import com.example.nestore_15.data.model.Listing
+import com.example.nestore_15.data.util.LocalListingImages
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
-import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -17,8 +17,7 @@ import java.util.Locale
 import java.util.UUID
 
 class ListingRepository(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
-    private val storage: FirebaseStorage = FirebaseStorage.getInstance()
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
 
     fun getAllListings(): Flow<List<Listing>> {
@@ -145,16 +144,22 @@ class ListingRepository(
         }.await()
     }
 
-    suspend fun createListing(listing: Listing, imageUri: Uri): String {
+    /**
+     * Legacy listings collection — images stored as drawable keys (no Firebase Storage).
+     * [imageUri] is ignored; kept for call-site compatibility.
+     */
+    suspend fun createListing(
+        listing: Listing,
+        imageUri: Uri? = null,
+        imageDrawableKey: String = LocalListingImages.defaultPropertyImageKey
+    ): String {
         val listingId = if (listing.id.isBlank()) {
             firestore.collection("listings").document().id
         } else {
             listing.id
         }
 
-        val imageRef = storage.reference.child("listing_images/$listingId")
-        imageRef.putFile(imageUri).await()
-        val imageUrl = imageRef.downloadUrl.await().toString()
+        val imageUrl = imageDrawableKey.ifBlank { LocalListingImages.defaultPropertyImageKey }
 
         val payload = hashMapOf(
             "title" to listing.title,

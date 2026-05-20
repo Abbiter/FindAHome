@@ -13,8 +13,8 @@ import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.example.nestore_15.R
+import com.example.nestore_15.data.util.loadListingImage
 import com.example.nestore_15.viewmodel.ChatUiState
 import com.example.nestore_15.viewmodel.ChatViewModel
 import kotlinx.coroutines.launch
@@ -59,12 +59,7 @@ class ChatActivity : AppCompatActivity() {
         messagesRecyclerView.adapter = adapter
 
         findViewById<TextView>(R.id.tvChatPropertyTitle).text = propertyTitle.ifBlank { "Property conversation" }
-        Glide.with(this)
-            .load(propertyImageUrl)
-            .placeholder(R.drawable.ic_launcher_background)
-            .error(R.drawable.ic_launcher_background)
-            .centerCrop()
-            .into(findViewById<ImageView>(R.id.ivChatPropertyThumb))
+        findViewById<ImageView>(R.id.ivChatPropertyThumb).loadListingImage(propertyImageUrl)
 
         lifecycleScope.launch {
             if (providedConversationId.isNotBlank()) {

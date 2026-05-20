@@ -94,8 +94,12 @@ class ProviderAddPropertyActivity : AppCompatActivity() {
     }
 
     private fun updateImageCountLabel() {
-        findViewById<TextView>(R.id.tvSelectedImageCount).text =
-            "${selectedUris.size} photos selected"
+        val count = selectedUris.size
+        findViewById<TextView>(R.id.tvSelectedImageCount).text = when (count) {
+            0 -> "No photos selected — a default listing image will be used"
+            1 -> "1 photo selected — saved with a catalog listing image"
+            else -> "$count photos selected — saved with catalog listing images"
+        }
     }
 
     private fun readStatus(sp: Spinner): PropertyStatus {

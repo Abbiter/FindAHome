@@ -9,8 +9,8 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.nestore_15.data.model.Listing
-import com.bumptech.glide.Glide
 import com.example.nestore_15.R
+import com.example.nestore_15.data.util.loadListingImage
 import com.google.android.material.button.MaterialButton
 import java.util.Locale
 
@@ -48,12 +48,7 @@ class ListingAdapter(
         holder.price.text = context.getString(R.string.listing_price_monthly, formatPrice(item.priceBwp))
         holder.location.text = item.location
         holder.availability.text = context.getString(R.string.listing_available_on, item.availabilityDate)
-        Glide.with(holder.itemView.context)
-            .load(item.imageUrl)
-            .placeholder(R.drawable.ic_launcher_background)
-            .error(R.drawable.ic_launcher_background)
-            .centerCrop()
-            .into(holder.image)
+        holder.image.loadListingImage(item.imageUrl)
 
         holder.statusBadge.isVisible = item.isReserved
         holder.statusBadge.text = context.getString(R.string.listing_status_reserved)

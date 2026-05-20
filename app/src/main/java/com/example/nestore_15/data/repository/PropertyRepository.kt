@@ -5,9 +5,9 @@ import com.example.nestore_15.data.model.Listing
 import com.example.nestore_15.data.model.Property
 import com.example.nestore_15.data.model.PropertyStatus
 import com.google.firebase.firestore.DocumentSnapshot
+import com.example.nestore_15.data.util.LocalListingImages
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -76,8 +76,7 @@ private fun todayString(): String =
     SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
 
 class PropertyRepository(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
-    private val storage: FirebaseStorage = FirebaseStorage.getInstance()
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
 
     fun observePropertiesByOwner(ownerId: String): Flow<List<Property>> = callbackFlow {
@@ -124,7 +123,7 @@ class PropertyRepository(
         imageUris: List<Uri>
     ): String {
         val docId = firestore.collection("properties").document().id
-        val imageUrls = uploadImages(ownerId, docId, imageUris)
+        val imageUrls = LocalListingImages.keysForNewProperty(imageUris.size)
         val now = System.currentTimeMillis()
         val payload = hashMapOf(
             "ownerId" to ownerId,
@@ -156,11 +155,10 @@ class PropertyRepository(
         existingImageUrls: List<String>,
         newImageUris: List<Uri>
     ) {
-        val newUrls = if (newImageUris.isNotEmpty()) {
-            uploadImages(ownerId, propertyId, newImageUris)
-        } else {
-            emptyList()
-        }
+        val newUrls = LocalListingImages.keysForAdditionalImages(
+            additionalCount = newImageUris.size,
+            startIndex = existingImageUrls.size
+        )
         val mergedUrls = existingImageUrls + newUrls
         val now = System.currentTimeMillis()
         val payload = hashMapOf(
@@ -222,13 +220,4 @@ class PropertyRepository(
         firestore.collection("properties").document(propertyId).delete().await()
     }
 
-    private suspend fun uploadImages(ownerId: String, propertyId: String, uris: List<Uri>): List<String> {
-        val urls = mutableListOf<String>()
-        uris.forEachIndexed { index, uri ->
-            val ref = storage.reference.child("property_images/$ownerId/$propertyId/$index-${UUID.randomUUID()}")
-            ref.putFile(uri).await()
-            urls.add(ref.downloadUrl.await().toString())
-        }
-        return urls
-    }
 }

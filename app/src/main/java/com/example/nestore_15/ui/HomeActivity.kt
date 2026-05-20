@@ -3,53 +3,54 @@ package com.example.nestore_15.ui
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.view.View
-import android.view.inputmethod.EditorInfo
 import android.widget.EditText
-import android.widget.ImageView
-import androidx.activity.result.contract.ActivityResultContracts
-import android.widget.ProgressBar
-import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.content.ContextCompat
-import androidx.core.view.GravityCompat
-import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.example.nestore_15.R
+import com.example.nestore_15.data.model.Listing
 import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.model.VerificationStatus
 import com.example.nestore_15.data.preferences.ListingFilterPreferencesStore
 import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.notifications.ListingMatchNotifier
+import com.example.nestore_15.ui.screens.MainScreen
+import com.example.nestore_15.ui.theme.FindAHomeColors
+import com.example.nestore_15.ui.theme.FindAHomeTheme
 import com.example.nestore_15.viewmodel.HomeUiState
 import com.example.nestore_15.viewmodel.HomeViewModel
+import com.example.nestore_15.viewmodel.ProfileUiState
+import com.example.nestore_15.viewmodel.ProfileViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.example.nestore_15.R
 
-class HomeActivity : AppCompatActivity() {
+class HomeActivity : ComponentActivity() {
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            Toast.makeText(this, "You’ll get alerts when new listings match your filters.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "You'll get alerts when new listings match your filters.", Toast.LENGTH_SHORT).show()
         } else {
             MaterialAlertDialogBuilder(this)
                 .setTitle("Notifications off")
@@ -61,6 +62,9 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private val viewModel: HomeViewModel by viewModels { HomeViewModel.factory() }
+    private val profileViewModel: ProfileViewModel by viewModels {
+        ProfileViewModel.factory(sessionManager)
+    }
     private val sessionManager by lazy { SessionManager(applicationContext) }
     private val listingRepository by lazy { ListingRepository() }
     private val filterStore by lazy { ListingFilterPreferencesStore(applicationContext) }
@@ -72,13 +76,11 @@ class HomeActivity : AppCompatActivity() {
             filterStore = filterStore
         )
     }
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var loadingProgress: ProgressBar
-    private lateinit var emptyStateText: TextView
-    private lateinit var listingAdapter: ListingAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+
         lifecycleScope.launch {
             val roleFromIntent = intent.getStringExtra(RegisterActivity.EXTRA_ROLE_OVERRIDE)
                 ?.let { runCatching { UserRole.valueOf(it) }.getOrNull() }
@@ -113,79 +115,59 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun initializeStudentUi() {
-        setContentView(R.layout.home)
+        setContent {
+            val homeState by viewModel.uiState.observeAsState(HomeUiState.Loading)
+            val profileState by profileViewModel.uiState.observeAsState(ProfileUiState.Loading)
+            val currentUser by sessionManager.getCurrentUser().collectAsStateWithLifecycle(initialValue = null)
+            var searchQuery by remember { mutableStateOf("") }
 
-        val drawerLayout = findViewById<DrawerLayout>(R.id.drawerLayout)
-        val navigationView = findViewById<NavigationView>(R.id.navView)
-        navigationView.bindPersonalizedDrawerHeader(lifecycleScope, sessionManager)
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
-
-        findViewById<ImageView>(R.id.btnMenu).setOnClickListener {
-            drawerLayout.openDrawer(GravityCompat.START)
-        }
-        findViewById<ImageView>(R.id.btnProfile).setOnClickListener {
-            startActivity(Intent(this, ProfileActivity::class.java))
-        }
-        observeVerificationStatus()
-        setupNotificationEntry()
-        setupSearchFilter()
-
-        recyclerView = findViewById(R.id.propertyRecyclerView)
-        loadingProgress = findViewById(R.id.homeLoadingProgress)
-        emptyStateText = findViewById(R.id.tvEmptyState)
-        setupPropertyRecyclerView(recyclerView)
-        listingAdapter = ListingAdapter(::onReserveRequested, ::onInquireRequested, ::openListingDetail)
-        recyclerView.adapter = listingAdapter
-
-        viewModel.uiState.observe(this) { state ->
-            renderHomeState(state)
-        }
-
-        findViewById<FloatingActionButton>(R.id.fabMap).setOnClickListener {
-            handleDepositAction()
-        }
-
-        navigationView.setNavigationItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_home -> {
-                    viewModel.loadListings()
-                }
-                R.id.nav_chats -> {
-                    startActivity(Intent(this, ConversationsActivity::class.java))
-                }
-                R.id.nav_saved -> {
-                    // TODO: Navigate to saved listings when favorites persistence is implemented
-                }
-                R.id.nav_profile -> {
-                    startActivity(Intent(this, ProfileActivity::class.java))
-                }
-                R.id.nav_logout -> {
-                    lifecycleScope.launch {
-                        sessionManager.clearSession()
-                        startActivity(
-                            Intent(this@HomeActivity, LoginActivity::class.java).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                            }
-                        )
-                        finish()
-                    }
-                }
+            val verificationColor = when (currentUser?.effectiveVerificationStatus()) {
+                VerificationStatus.VERIFIED -> FindAHomeColors.VerifiedGreen
+                VerificationStatus.PENDING_REVIEW -> FindAHomeColors.PendingOrange
+                VerificationStatus.NOT_SUBMITTED, null -> FindAHomeColors.NeutralDot
             }
-            drawerLayout.closeDrawers()
-            true
+
+            FindAHomeTheme {
+                MainScreen(
+                    homeUiState = homeState ?: HomeUiState.Loading,
+                    profileUiState = profileState ?: ProfileUiState.Loading,
+                    searchQuery = searchQuery,
+                    onSearchChange = { searchQuery = it },
+                    onSearchDone = {
+                        lifecycleScope.launch {
+                            filterStore.saveLocationFilter(searchQuery)
+                            Toast.makeText(this@HomeActivity, "Filter saved", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    verificationDotColor = verificationColor,
+                    onNotifications = { setupNotificationEntry() },
+                    onProfileHeader = {
+                        startActivity(Intent(this@HomeActivity, ProfileActivity::class.java))
+                    },
+                    onListingClick = ::openListingDetail,
+                    onReserve = ::onReserveRequested,
+                    onInquire = ::onInquireRequested,
+                    onMapFab = { handleDepositAction() },
+                    onOpenMessages = {
+                        startActivity(Intent(this@HomeActivity, ConversationsActivity::class.java))
+                    },
+                    onEditProfile = {
+                        startActivity(Intent(this@HomeActivity, EditProfileActivity::class.java))
+                    },
+                    onVerify = {
+                        startActivity(Intent(this@HomeActivity, VerificationActivity::class.java))
+                    },
+                    onLogout = { confirmLogout() },
+                    onChangePassword = { sendPasswordReset(profileState) }
+                )
+            }
         }
 
         onBackPressedDispatcher.addCallback(
             this,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-                        drawerLayout.closeDrawer(GravityCompat.START)
-                    } else {
-                        isEnabled = false
-                        onBackPressedDispatcher.onBackPressed()
-                    }
+                    finishAffinity()
                 }
             }
         )
@@ -193,48 +175,46 @@ class HomeActivity : AppCompatActivity() {
         listingMatchNotifier.start(lifecycleScope)
     }
 
-    private fun setupPropertyRecyclerView(recyclerView: RecyclerView) {
-        val columnCount = 2
-        val spacingPx = resources.getDimensionPixelSize(R.dimen.grid_list_spacing)
-
-        recyclerView.layoutManager = GridLayoutManager(this, columnCount)
-        if (recyclerView.itemDecorationCount == 0) {
-            recyclerView.addItemDecoration(
-                GridSpacingItemDecoration(columnCount, spacingPx, includeEdge = true)
-            )
-        }
+    private fun confirmLogout() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Log out")
+            .setMessage("Sign out of this account?")
+            .setPositiveButton("Log out") { _, _ ->
+                lifecycleScope.launch {
+                    sessionManager.clearSession()
+                    startActivity(
+                        Intent(this@HomeActivity, LoginActivity::class.java).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        }
+                    )
+                    finish()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
-    private fun renderHomeState(state: HomeUiState) {
-        when (state) {
-            HomeUiState.Loading -> {
-                recyclerView.alpha = 0.5f
-                recyclerView.visibility = View.VISIBLE
-                loadingProgress.visibility = View.VISIBLE
-                emptyStateText.visibility = View.GONE
-            }
-            is HomeUiState.Success -> {
-                recyclerView.alpha = 1f
-                loadingProgress.visibility = View.GONE
-                listingAdapter.submitList(state.listings)
-                emptyStateText.visibility =
-                    if (state.listings.isEmpty()) View.VISIBLE else View.GONE
-            }
-            HomeUiState.Error -> {
-                recyclerView.alpha = 1f
-                loadingProgress.visibility = View.GONE
-                emptyStateText.visibility = View.GONE
-                Toast.makeText(this, "Failed to load listings", Toast.LENGTH_SHORT).show()
-            }
+    private fun sendPasswordReset(profileState: ProfileUiState?) {
+        val email = (profileState as? ProfileUiState.Success)?.user?.email?.takeIf { it.isNotBlank() }
+            ?: FirebaseAuth.getInstance().currentUser?.email
+        if (email.isNullOrBlank()) {
+            Toast.makeText(this, "No email on file", Toast.LENGTH_SHORT).show()
+            return
         }
+        FirebaseAuth.getInstance().sendPasswordResetEmail(email)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Toast.makeText(this, "Reset link sent to $email", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(this, task.exception?.message ?: "Could not send email", Toast.LENGTH_LONG).show()
+                }
+            }
     }
 
     private fun handleDepositAction() {
-        guardRestrictedFeatureAccess(
-            onAccessGranted = {
-                Toast.makeText(this, "Deposit feature coming soon", Toast.LENGTH_SHORT).show()
-            }
-        )
+        guardRestrictedFeatureAccess {
+            Toast.makeText(this, "Deposit feature coming soon", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun guardRestrictedFeatureAccess(onAccessGranted: () -> Unit) {
@@ -244,97 +224,76 @@ class HomeActivity : AppCompatActivity() {
                 Toast.makeText(this@HomeActivity, "Please log in to continue", Toast.LENGTH_SHORT).show()
                 return@launch
             }
-
             val isVerified = sessionManager.isVerified.first()
             if (!isVerified) {
                 Toast.makeText(this@HomeActivity, "Please verify your account to continue", Toast.LENGTH_SHORT).show()
                 return@launch
             }
-
             onAccessGranted()
         }
     }
 
-    private fun onReserveRequested(listing: com.example.nestore_15.data.model.Listing) {
+    private fun onReserveRequested(listing: Listing) {
         if (listing.isReserved) {
             Toast.makeText(this, "Listing is already reserved", Toast.LENGTH_SHORT).show()
             return
         }
-
-        guardRestrictedFeatureAccess(
-            onAccessGranted = {
-                val currentUserId = sessionManager.getCurrentUserId()
-                if (currentUserId == null) {
-                    Toast.makeText(this, "Please log in to continue", Toast.LENGTH_SHORT).show()
-                    return@guardRestrictedFeatureAccess
-                }
-
-                viewModel.reserveListing(
-                    listing = listing,
-                    currentUserId = currentUserId
-                ) { result ->
-                    result.onSuccess { reservationRef ->
-                        startActivity(
-                            Intent(this, PaymentSuccessActivity::class.java).apply {
-                                putExtra(PaymentSuccessActivity.EXTRA_RESERVATION_REF, reservationRef)
-                            }
-                        )
-                    }.onFailure {
-                        Toast.makeText(this, "Listing already reserved", Toast.LENGTH_SHORT).show()
-                    }
+        guardRestrictedFeatureAccess {
+            val currentUserId = sessionManager.getCurrentUserId()
+            if (currentUserId == null) {
+                Toast.makeText(this, "Please log in to continue", Toast.LENGTH_SHORT).show()
+                return@guardRestrictedFeatureAccess
+            }
+            viewModel.reserveListing(listing, currentUserId) { result ->
+                result.onSuccess { reservationRef ->
+                    startActivity(
+                        Intent(this, PaymentSuccessActivity::class.java).apply {
+                            putExtra(PaymentSuccessActivity.EXTRA_RESERVATION_REF, reservationRef)
+                        }
+                    )
+                }.onFailure {
+                    Toast.makeText(this, "Listing already reserved", Toast.LENGTH_SHORT).show()
                 }
             }
-        )
+        }
     }
 
-    private fun onInquireRequested(listing: com.example.nestore_15.data.model.Listing) {
-        guardRestrictedFeatureAccess(
-            onAccessGranted = {
-                val input = EditText(this)
-                input.hint = "Your message to the host"
-                MaterialAlertDialogBuilder(this)
-                    .setTitle("Inquire about this home")
-                    .setView(input)
-                    .setPositiveButton("Send") { _, _ ->
-                        val message = input.text.toString().trim()
-                        if (message.isEmpty()) {
-                            Toast.makeText(this, "Please enter a message", Toast.LENGTH_SHORT).show()
-                            return@setPositiveButton
-                        }
-                        val studentId = sessionManager.getCurrentUserId()
-                        if (studentId.isNullOrBlank()) {
-                            Toast.makeText(this, "Please log in to continue", Toast.LENGTH_SHORT).show()
-                            return@setPositiveButton
-                        }
-                        val authUser = FirebaseAuth.getInstance().currentUser
-                        val rawName = authUser?.displayName?.takeIf { it.isNotBlank() }
-                            ?: authUser?.email?.substringBefore("@").orEmpty()
-                        val studentName = if (rawName.isBlank()) "Student" else rawName
-
-                        viewModel.submitInquiry(
-                            listing = listing,
-                            message = message,
-                            studentId = studentId,
-                            studentName = studentName
-                        ) { result ->
-                            result.onSuccess {
-                                Toast.makeText(this, "Inquiry sent", Toast.LENGTH_SHORT).show()
-                            }.onFailure {
-                                Toast.makeText(
-                                    this,
-                                    it.message ?: "Could not send inquiry",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
+    private fun onInquireRequested(listing: Listing) {
+        guardRestrictedFeatureAccess {
+            val input = EditText(this)
+            input.hint = "Your message to the host"
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Inquire about this home")
+                .setView(input)
+                .setPositiveButton("Send") { _, _ ->
+                    val message = input.text.toString().trim()
+                    if (message.isEmpty()) {
+                        Toast.makeText(this, "Please enter a message", Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
+                    val studentId = sessionManager.getCurrentUserId()
+                    if (studentId.isNullOrBlank()) {
+                        Toast.makeText(this, "Please log in to continue", Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
+                    val authUser = FirebaseAuth.getInstance().currentUser
+                    val rawName = authUser?.displayName?.takeIf { it.isNotBlank() }
+                        ?: authUser?.email?.substringBefore("@").orEmpty()
+                    val studentName = if (rawName.isBlank()) "Student" else rawName
+                    viewModel.submitInquiry(listing, message, studentId, studentName) { result ->
+                        result.onSuccess {
+                            Toast.makeText(this, "Inquiry sent", Toast.LENGTH_SHORT).show()
+                        }.onFailure {
+                            Toast.makeText(this, it.message ?: "Could not send inquiry", Toast.LENGTH_LONG).show()
                         }
                     }
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .show()
-            }
-        )
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
     }
 
-    private fun openListingDetail(listing: com.example.nestore_15.data.model.Listing) {
+    private fun openListingDetail(listing: Listing) {
         startActivity(
             Intent(this, StudentListingDetailActivity::class.java).apply {
                 putExtra(StudentListingDetailActivity.EXTRA_PROPERTY_ID, listing.id)
@@ -359,67 +318,24 @@ class HomeActivity : AppCompatActivity() {
         else String.format(java.util.Locale.getDefault(), "%.2f", price)
     }
 
-    private fun setupSearchFilter() {
-        val searchInput = findViewById<EditText?>(R.id.searchInput) ?: return
-        searchInput.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_DONE) {
-                lifecycleScope.launch {
-                    filterStore.saveLocationFilter(searchInput.text.toString())
-                    Toast.makeText(this@HomeActivity, "Filter saved", Toast.LENGTH_SHORT).show()
-                }
-                true
-            } else {
-                false
-            }
-        }
-    }
-
-    private fun observeVerificationStatus() {
-        val statusDot = findViewById<View>(R.id.viewVerificationDot)
-        val a11yBase = getString(R.string.cd_verification_status)
-
-        lifecycleScope.launch {
-            sessionManager.getCurrentUser().collect { user ->
-                val (label, colorRes) = when {
-                    user == null ->
-                        "Signed out" to R.color.verification_dot_neutral
-                    user.effectiveVerificationStatus() == VerificationStatus.VERIFIED ->
-                        getString(R.string.verification_label_verified) to R.color.available_green
-                    user.effectiveVerificationStatus() == VerificationStatus.PENDING_REVIEW ->
-                        getString(R.string.verification_label_pending) to R.color.status_pending_orange
-                    else ->
-                        getString(R.string.verification_label_not_submitted) to R.color.verification_dot_neutral
-                }
-                val color = ContextCompat.getColor(this@HomeActivity, colorRes)
-                statusDot.backgroundTintList = ColorStateList.valueOf(color)
-                statusDot.contentDescription = "$a11yBase: $label"
-            }
-        }
-    }
-
     private fun setupNotificationEntry() {
-        findViewById<ImageView>(R.id.btnNotifications).setOnClickListener {
-            if (Build.VERSION.SDK_INT >= 33) {
-                when {
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-                        PackageManager.PERMISSION_GRANTED -> openAppNotificationSettings()
-                    ActivityCompat.shouldShowRequestPermissionRationale(
-                        this,
-                        Manifest.permission.POST_NOTIFICATIONS
-                    ) -> {
-                        MaterialAlertDialogBuilder(this)
-                            .setMessage(R.string.notification_rationale)
-                            .setPositiveButton(R.string.notification_allow) { _, _ ->
-                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            }
-                            .setNegativeButton(R.string.not_now, null)
-                            .show()
-                    }
-                    else -> notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        if (Build.VERSION.SDK_INT >= 33) {
+            when {
+                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+                    PackageManager.PERMISSION_GRANTED -> openAppNotificationSettings()
+                ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.POST_NOTIFICATIONS) -> {
+                    MaterialAlertDialogBuilder(this)
+                        .setMessage(R.string.notification_rationale)
+                        .setPositiveButton(R.string.notification_allow) { _, _ ->
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                        .setNegativeButton(R.string.not_now, null)
+                        .show()
                 }
-            } else {
-                openAppNotificationSettings()
+                else -> notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
+        } else {
+            openAppNotificationSettings()
         }
     }
 

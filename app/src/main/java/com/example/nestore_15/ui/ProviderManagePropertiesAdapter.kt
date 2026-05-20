@@ -8,9 +8,10 @@ import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.example.nestore_15.R
 import com.example.nestore_15.data.model.Property
+import com.example.nestore_15.data.util.ListingImageResolver
+import com.example.nestore_15.data.util.loadListingImage
 import com.example.nestore_15.data.model.PropertyStatus
 import com.google.android.material.button.MaterialButton
 import java.util.Locale
@@ -46,12 +47,7 @@ class ProviderManagePropertiesAdapter(
         holder.price.text = ctx.getString(R.string.listing_price_monthly, formatPrice(p.priceBwp))
         holder.status.text = statusLabel(p.availabilityStatus)
 
-        Glide.with(ctx)
-            .load(p.imageUrls.firstOrNull())
-            .placeholder(R.drawable.ic_launcher_background)
-            .error(R.drawable.ic_launcher_background)
-            .centerCrop()
-            .into(holder.image)
+        holder.image.loadListingImage(ListingImageResolver.primaryFromList(p.imageUrls))
 
         holder.edit.setOnClickListener { onEdit(p) }
         holder.delete.setOnClickListener { onDelete(p) }

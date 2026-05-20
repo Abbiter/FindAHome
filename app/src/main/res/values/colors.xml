@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary -->
-    <color name="royal_blue">#2A52BE</color>
-    <color name="cobalt_blue">#0047AB</color>
+    <!-- Find a Home brand -->
+    <color name="brand_primary_dark">#002462</color>
+    <color name="brand_orange">#F17100</color>
+    <color name="brand_green">#50B706</color>
+    <color name="brand_image_border">#0D4779</color>
+
+    <!-- Primary (legacy aliases → brand) -->
+    <color name="royal_blue">#002462</color>
+    <color name="cobalt_blue">#002462</color>
 
     <!-- Secondary -->
     <color name="mid_blue">#3B6EDC</color>
@@ -25,8 +31,8 @@
     <color name="hint_blue">#7A8FBF</color>
     <color name="overlay_white_20">#33FFFFFF</color>
     <color name="overlay_white_80">#CCFFFFFF</color>
-    <color name="available_green">#4CAF50</color>
-    <color name="status_pending_orange">#F9A825</color>
+    <color name="available_green">#50B706</color>
+    <color name="status_pending_orange">#F17100</color>
     <color name="status_not_verified_red">#D32F2F</color>
     <!-- Verification dot when nothing submitted (readable on blue headers + avatars) -->
     <color name="verification_dot_neutral">#B8C4E8</color>
