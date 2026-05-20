@@ -7,8 +7,13 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.example.nestore_15.R
 import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.ui.screens.SplashScreen
 import com.example.nestore_15.ui.theme.FindAHomeTheme
@@ -38,19 +43,38 @@ class SplashActivity : ComponentActivity() {
 
         setContent {
             val state by viewModel.uiState.observeAsState(SplashUiState.Loading)
+            var pendingDestination by remember { mutableStateOf<SplashDestination?>(null) }
+            var exitAnimationFinished by remember { mutableStateOf(false) }
+
+            LaunchedEffect(state) {
+                val ready = state as? SplashUiState.Ready ?: return@LaunchedEffect
+                if (pendingDestination == null) {
+                    pendingDestination = ready.destination
+                }
+            }
+
             FindAHomeTheme {
                 SplashScreen(
                     isLoading = state is SplashUiState.Loading,
                     errorMessage = (state as? SplashUiState.ConnectivityIssue)?.message,
-                    onRetry = { viewModel.startStartupFlow() }
+                    isNavigatingAway = pendingDestination != null && !exitAnimationFinished,
+                    onExitAnimationFinished = {
+                        if (!exitAnimationFinished) {
+                            exitAnimationFinished = true
+                            pendingDestination?.let { dest ->
+                                if (!hasNavigatedAway) {
+                                    hasNavigatedAway = true
+                                    navigateAndFinish(dest)
+                                }
+                            }
+                        }
+                    },
+                    onRetry = {
+                        pendingDestination = null
+                        exitAnimationFinished = false
+                        viewModel.startStartupFlow()
+                    }
                 )
-            }
-        }
-
-        viewModel.uiState.observe(this) { state ->
-            if (state is SplashUiState.Ready && !hasNavigatedAway) {
-                hasNavigatedAway = true
-                navigateAndFinish(state.destination)
             }
         }
 
@@ -71,6 +95,8 @@ class SplashActivity : ComponentActivity() {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         }
         startActivity(intent)
+        @Suppress("DEPRECATION")
+        overridePendingTransition(R.anim.splash_fade_in, R.anim.splash_fade_out)
         finish()
     }
 }
