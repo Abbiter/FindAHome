@@ -41,6 +41,13 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // Uncompressed .so + 16 KB zip alignment (requires AGP 8.5.1+)
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
+    }
 }
 
 dependencies {
@@ -54,8 +61,6 @@ dependencies {
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.activity.compose)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-    implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
-
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation("androidx.compose.runtime:runtime-livedata")
@@ -73,7 +78,7 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("com.google.android.material:material:1.12.0")
     implementation("com.github.bumptech.glide:glide:4.16.0")
-    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0")) // includes 16 KB–aligned native libs in recent releases
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")

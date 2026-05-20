@@ -23,7 +23,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,6 +41,7 @@ import com.example.nestore_15.ui.components.FindAHomeTopAppBar
 import com.example.nestore_15.ui.components.HeaderActionRow
 import com.example.nestore_15.ui.components.ListingsEmptyState
 import com.example.nestore_15.ui.components.OverlayLoading
+import com.example.nestore_15.ui.components.findAHomeTextFieldColors
 import com.example.nestore_15.ui.components.PropertyCard
 import com.example.nestore_15.ui.theme.FindAHomeColors
 import com.example.nestore_15.ui.theme.InputShape
@@ -95,15 +95,22 @@ fun HomeScreen(
                     value = searchQuery,
                     onValueChange = onSearchChange,
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Search by location…") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    placeholder = {
+                        Text(
+                            "Search by location…",
+                            color = FindAHomeColors.TextSecondary.copy(alpha = 0.7f)
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            tint = FindAHomeColors.PrimaryDarkBlue
+                        )
+                    },
                     shape = InputShape,
                     singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = FindAHomeColors.CardSurface,
-                        unfocusedContainerColor = FindAHomeColors.CardSurface,
-                        focusedBorderColor = FindAHomeColors.OrangeAccent
-                    )
+                    colors = findAHomeTextFieldColors()
                 )
                 Spacer(Modifier.width(8.dp))
                 IconButton(onClick = { showFilterSheet = true }) {

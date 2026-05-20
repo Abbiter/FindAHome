@@ -35,6 +35,7 @@ import com.example.nestore_15.ui.components.FindAHomeCenterTopBar
 import com.example.nestore_15.ui.components.ListingImage
 import com.example.nestore_15.ui.components.OverlayLoading
 import com.example.nestore_15.ui.components.PrimaryOrangeButton
+import com.example.nestore_15.ui.components.findAHomeTextFieldColors
 import com.example.nestore_15.ui.components.SecondaryGreenButton
 import com.example.nestore_15.ui.theme.CardShape
 import com.example.nestore_15.ui.theme.FindAHomeColors
@@ -257,8 +258,4 @@ private fun PaymentSuccessContent(
 }
 
 @Composable
-private fun paymentFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedContainerColor = FindAHomeColors.CardSurface,
-    unfocusedContainerColor = FindAHomeColors.CardSurface,
-    focusedBorderColor = FindAHomeColors.OrangeAccent
-)
+private fun paymentFieldColors() = findAHomeTextFieldColors()

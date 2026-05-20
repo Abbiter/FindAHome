@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
@@ -18,8 +19,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -27,6 +30,47 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.nestore_15.ui.theme.FindAHomeColors
 import com.example.nestore_15.ui.theme.InputShape
+
+/** Readable text + cursor on white inputs — not tied to system dark mode. */
+@Composable
+fun findAHomeTextFieldColors(
+    containerColor: Color = FindAHomeColors.InputBackground
+): TextFieldColors = OutlinedTextFieldDefaults.colors(
+    focusedTextColor = FindAHomeColors.PrimaryText,
+    unfocusedTextColor = FindAHomeColors.PrimaryText,
+    disabledTextColor = FindAHomeColors.TextSecondary.copy(alpha = 0.55f),
+    errorTextColor = FindAHomeColors.PrimaryText,
+    cursorColor = FindAHomeColors.PrimaryDarkBlue,
+    errorCursorColor = FindAHomeColors.ErrorRed,
+    selectionColors = TextSelectionColors(
+        handleColor = FindAHomeColors.OrangeAccent,
+        backgroundColor = FindAHomeColors.OrangeAccent.copy(alpha = 0.28f)
+    ),
+    focusedBorderColor = FindAHomeColors.OrangeAccent,
+    unfocusedBorderColor = FindAHomeColors.ImageBorder.copy(alpha = 0.45f),
+    disabledBorderColor = FindAHomeColors.ImageBorder.copy(alpha = 0.25f),
+    errorBorderColor = FindAHomeColors.ErrorRed,
+    focusedContainerColor = containerColor,
+    unfocusedContainerColor = containerColor,
+    disabledContainerColor = containerColor,
+    errorContainerColor = containerColor,
+    focusedLeadingIconColor = FindAHomeColors.PrimaryDarkBlue,
+    unfocusedLeadingIconColor = FindAHomeColors.TextSecondary,
+    disabledLeadingIconColor = FindAHomeColors.TextSecondary.copy(alpha = 0.5f),
+    errorLeadingIconColor = FindAHomeColors.ErrorRed,
+    focusedTrailingIconColor = FindAHomeColors.PrimaryDarkBlue,
+    unfocusedTrailingIconColor = FindAHomeColors.TextSecondary,
+    disabledTrailingIconColor = FindAHomeColors.TextSecondary.copy(alpha = 0.5f),
+    errorTrailingIconColor = FindAHomeColors.ErrorRed,
+    focusedPlaceholderColor = FindAHomeColors.TextSecondary.copy(alpha = 0.7f),
+    unfocusedPlaceholderColor = FindAHomeColors.TextSecondary.copy(alpha = 0.7f),
+    disabledPlaceholderColor = FindAHomeColors.TextSecondary.copy(alpha = 0.45f),
+    errorPlaceholderColor = FindAHomeColors.TextSecondary.copy(alpha = 0.7f),
+    focusedLabelColor = FindAHomeColors.PrimaryDarkBlue,
+    unfocusedLabelColor = FindAHomeColors.TextSecondary,
+    disabledLabelColor = FindAHomeColors.TextSecondary.copy(alpha = 0.5f),
+    errorLabelColor = FindAHomeColors.ErrorRed
+)
 
 @Composable
 fun LabeledTextField(
@@ -56,7 +100,11 @@ fun LabeledTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { if (hint.isNotEmpty()) Text(hint, color = FindAHomeColors.TextSecondary.copy(alpha = 0.6f)) },
+            placeholder = {
+                if (hint.isNotEmpty()) {
+                    Text(hint, color = FindAHomeColors.TextSecondary.copy(alpha = 0.7f))
+                }
+            },
             shape = InputShape,
             singleLine = true,
             isError = isError,
@@ -66,7 +114,8 @@ fun LabeledTextField(
                     IconButton(onClick = onTogglePassword) {
                         Icon(
                             if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = "Toggle password"
+                            contentDescription = "Toggle password",
+                            tint = FindAHomeColors.PrimaryDarkBlue
                         )
                     }
                 }
@@ -78,12 +127,7 @@ fun LabeledTextField(
             },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
             keyboardActions = KeyboardActions(onDone = { onImeAction() }),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = FindAHomeColors.CardSurface,
-                unfocusedContainerColor = FindAHomeColors.CardSurface,
-                focusedBorderColor = FindAHomeColors.OrangeAccent,
-                unfocusedBorderColor = FindAHomeColors.ImageBorder.copy(alpha = 0.4f)
-            )
+            colors = findAHomeTextFieldColors()
         )
         if (errorMessage != null) {
             Text(
@@ -105,7 +149,13 @@ fun EmailField(value: String, onValueChange: (String) -> Unit, modifier: Modifie
         hint = "student@ub.ac.bw",
         modifier = modifier,
         keyboardType = KeyboardType.Email,
-        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+        leadingIcon = {
+            Icon(
+                Icons.Default.Email,
+                contentDescription = null,
+                tint = FindAHomeColors.PrimaryDarkBlue
+            )
+        },
         isError = isError
     )
 }
@@ -126,7 +176,13 @@ fun PasswordField(
         isPassword = true,
         passwordVisible = visible,
         onTogglePassword = onToggle,
-        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+        leadingIcon = {
+            Icon(
+                Icons.Default.Lock,
+                contentDescription = null,
+                tint = FindAHomeColors.PrimaryDarkBlue
+            )
+        },
         imeAction = ImeAction.Done
     )
 }
@@ -142,7 +198,13 @@ fun NameField(
         label = "Full name",
         value = value,
         onValueChange = onValueChange,
-        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+        leadingIcon = {
+            Icon(
+                Icons.Default.Person,
+                contentDescription = null,
+                tint = FindAHomeColors.PrimaryDarkBlue
+            )
+        },
         modifier = modifier,
         isError = isError
     )
@@ -155,7 +217,13 @@ fun PhoneField(value: String, onValueChange: (String) -> Unit, modifier: Modifie
         value = value,
         onValueChange = onValueChange,
         keyboardType = KeyboardType.Phone,
-        leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
+        leadingIcon = {
+            Icon(
+                Icons.Default.Phone,
+                contentDescription = null,
+                tint = FindAHomeColors.PrimaryDarkBlue
+            )
+        },
         modifier = modifier
     )
 }

@@ -7,7 +7,9 @@ object FindAHomeColors {
     val PrimaryDarkBlue = Color(0xFF002462)
     val OrangeAccent = Color(0xFFF17100)
     val GreenAccent = Color(0xFF50B706)
-    val CardSurface = Color(0xF2FFFFFF) // 95% white
+    val CardSurface = Color(0xFFFFFFFF)
+    /** Solid white behind typed text (avoids contrast issues on auth cards). */
+    val InputBackground = Color(0xFFFFFFFF)
     val PrimaryText = Color(0xFF000000)
     val ImageBorder = Color(0xFF0D4779)
     val BackgroundSoft = Color(0xFFF3F7FE)

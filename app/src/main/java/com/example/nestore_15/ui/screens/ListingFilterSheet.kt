@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import com.example.nestore_15.data.model.ListingFilterPreferences
 import com.example.nestore_15.ui.components.PrimaryOrangeButton
 import com.example.nestore_15.ui.components.SecondaryGreenButton
+import com.example.nestore_15.ui.components.findAHomeTextFieldColors
+import com.example.nestore_15.ui.theme.FindAHomeColors
 import com.example.nestore_15.ui.theme.InputShape
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,29 +43,32 @@ fun ListingFilterSheet(
             OutlinedTextField(
                 value = location,
                 onValueChange = { location = it },
-                label = { Text("Location contains") },
-                placeholder = { Text("e.g. Gaborone, Block 6") },
+                label = { Text("Location contains", color = FindAHomeColors.TextSecondary) },
+                placeholder = { Text("e.g. Gaborone, Block 6", color = FindAHomeColors.TextSecondary.copy(alpha = 0.7f)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = InputShape
+                shape = InputShape,
+                colors = findAHomeTextFieldColors()
             )
             Spacer(Modifier.height(10.dp))
             OutlinedTextField(
                 value = minPrice,
                 onValueChange = { minPrice = it.filter { c -> c.isDigit() } },
-                label = { Text("Min price (BWP)") },
+                label = { Text("Min price (BWP)", color = FindAHomeColors.TextSecondary) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = InputShape
+                shape = InputShape,
+                colors = findAHomeTextFieldColors()
             )
             Spacer(Modifier.height(10.dp))
             OutlinedTextField(
                 value = maxPrice,
                 onValueChange = { maxPrice = it.filter { c -> c.isDigit() } },
-                label = { Text("Max price (BWP)") },
+                label = { Text("Max price (BWP)", color = FindAHomeColors.TextSecondary) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = InputShape
+                shape = InputShape,
+                colors = findAHomeTextFieldColors()
             )
             Spacer(Modifier.height(20.dp))
             PrimaryOrangeButton(
