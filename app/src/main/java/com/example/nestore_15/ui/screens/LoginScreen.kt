@@ -56,9 +56,8 @@ fun LoginScreen(
     ) {
         Spacer(Modifier.height(24.dp))
         BrandLogo(
-            modifier = Modifier.size(140.dp),
-            height = 140.dp,
-            width = 140.dp
+            fillMaxWidthFraction = 0.65f,
+            modifier = Modifier.padding(horizontal = 24.dp)
         )
         Spacer(Modifier.height(20.dp))
         Card(

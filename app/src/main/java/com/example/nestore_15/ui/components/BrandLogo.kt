@@ -1,6 +1,8 @@
 package com.example.nestore_15.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
@@ -15,22 +17,25 @@ fun BrandLogo(
     modifier: Modifier = Modifier,
     height: Dp = Dp.Unspecified,
     width: Dp = Dp.Unspecified,
+    fillMaxWidthFraction: Float? = null,
     contentDescription: String = "Find A Home"
 ) {
+    var imageModifier = modifier
+    if (fillMaxWidthFraction != null) {
+        imageModifier = imageModifier
+            .fillMaxWidth(fillMaxWidthFraction)
+            .aspectRatio(1f)
+    }
+    if (height != Dp.Unspecified) {
+        imageModifier = imageModifier.height(height)
+    }
+    if (width != Dp.Unspecified) {
+        imageModifier = imageModifier.width(width)
+    }
     Image(
-        painter = painterResource(R.drawable.branding_logo),
+        painter = painterResource(R.drawable.splash_logo),
         contentDescription = contentDescription,
-        modifier = modifier.then(
-            when {
-                height != Dp.Unspecified -> Modifier.height(height)
-                else -> Modifier
-            }
-        ).then(
-            when {
-                width != Dp.Unspecified -> Modifier.width(width)
-                else -> Modifier
-            }
-        ),
+        modifier = imageModifier,
         contentScale = ContentScale.Fit
     )
 }

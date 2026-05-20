@@ -64,9 +64,8 @@ fun RegisterScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         BrandLogo(
-            modifier = Modifier.padding(bottom = 12.dp),
-            height = 100.dp,
-            width = 200.dp
+            fillMaxWidthFraction = 0.55f,
+            modifier = Modifier.padding(bottom = 12.dp, start = 24.dp, end = 24.dp)
         )
         Text(
             "Create your account",

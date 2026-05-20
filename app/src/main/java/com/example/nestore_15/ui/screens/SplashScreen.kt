@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -66,23 +65,25 @@ fun SplashScreen(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 32.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 40.dp)
         ) {
             BrandLogo(
-                modifier = Modifier.size(220.dp),
-                height = 220.dp,
-                width = 220.dp
+                fillMaxWidthFraction = 0.72f,
+                modifier = Modifier.padding(horizontal = 8.dp)
             )
             if (isLoading && errorMessage == null) {
-                PulsingLoader(modifier = Modifier.padding(top = 28.dp))
+                PulsingLoader(modifier = Modifier.padding(top = 32.dp))
             }
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(24.dp))
             Text(
                 text = stringResource(R.string.splash_tagline),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
                 color = FindAHomeColors.TextOnPrimary,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
         }
 

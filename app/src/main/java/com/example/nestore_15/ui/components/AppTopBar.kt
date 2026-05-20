@@ -54,10 +54,10 @@ fun FindAHomeTopAppBar(
             title = {
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                     Image(
-                        painter = painterResource(R.drawable.branding_logo),
+                        painter = painterResource(R.drawable.ic_launcher_foreground),
                         contentDescription = null,
                         modifier = Modifier
-                            .size(32.dp)
+                            .size(36.dp)
                             .padding(end = 8.dp),
                         contentScale = ContentScale.Fit
                     )
