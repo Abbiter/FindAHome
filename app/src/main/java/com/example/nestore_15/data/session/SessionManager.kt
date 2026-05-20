@@ -116,7 +116,7 @@ class SessionManager(
             val docRef = firestore.collection("users").document(firebaseUser.uid)
             val registration: ListenerRegistration = docRef.addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    close(error)
+                    trySend(null).isSuccess
                     return@addSnapshotListener
                 }
 

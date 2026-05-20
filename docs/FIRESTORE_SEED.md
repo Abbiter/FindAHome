@@ -2,17 +2,20 @@
 
 ## If the app shows "No listings found"
 
-1. **Publish Firestore rules** — Copy `firestore.rules` from the project root into [Firebase Console](https://console.firebase.google.com/project/findahome-50b4d/firestore/rules) → Firestore → Rules → Publish. Without rules for `properties` / `listings`, signed-in users cannot read seeded data.
-2. **Run the Node seeder** (same project as `app/google-services.json`):
+1. **Verify data exists** — `cd scripts && node verify.js` should report **properties: 350**. If zero, run the seeder (step 2).
+2. **Publish Firestore rules** — Copy `firestore.rules` from the project root into [Firebase Console](https://console.firebase.google.com/project/findahome-50b4d/firestore/rules) → Publish. Conversations need the **latest** rules (`resource.data.participants`, not `get()` on the same doc).
+3. **Run the Node seeder** (project `findahome-50b4d`):
 
 ```bash
 cd scripts
 npm install
-# Place serviceAccountKey.json from Firebase Console → Project settings → Service accounts
+# serviceAccountKey.json from Firebase → Project settings → Service accounts
 node seed.js --reset
+# Optional sample inbox for your Auth UID:
+node seed.js --reset --link-student=YOUR_FIREBASE_AUTH_UID
 ```
 
-3. **Sign in** on the device with any Firebase Auth account (student). Listings come from the `properties` collection.
+4. **Sign in** as a **student**. Listings load from `properties`, not `listings`.
 
 ---
 

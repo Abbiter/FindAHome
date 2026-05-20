@@ -6,6 +6,7 @@ admin.initializeApp({
 });
 
 const db = admin.firestore();
+const FieldValue = admin.firestore.FieldValue;
 
 const PROVIDER_UIDS = [
   'yBFoS19T0eehc8ETeb6VHkv3mrR2',
@@ -114,6 +115,15 @@ const PROPERTY_COUNT = 350;
 const BATCH_SIZE = 450;
 const RESET = process.argv.includes('--reset');
 
+function parseLinkStudentUid() {
+  const arg = process.argv.find((a) => a.startsWith('--link-student='));
+  if (!arg) return null;
+  const uid = arg.split('=')[1]?.trim();
+  return uid || null;
+}
+
+const LINK_STUDENT_UID = parseLinkStudentUid();
+
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -146,16 +156,35 @@ function randomTimestampWithinDays(days) {
   return now - offset;
 }
 
+function conversationId(propertyId, studentId, providerId) {
+  const participants = [studentId, providerId].sort();
+  return `${propertyId}_${participants[0]}_${participants[1]}`;
+}
+
+async function deleteSubcollection(docRef, subName) {
+  const col = docRef.collection(subName);
+  while (true) {
+    const snap = await col.limit(500).get();
+    if (snap.empty) break;
+    const batch = db.batch();
+    snap.docs.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
+}
+
 async function deleteCollection(collectionName) {
   const col = db.collection(collectionName);
   let deleted = 0;
   while (true) {
     const snap = await col.limit(500).get();
     if (snap.empty) break;
-    const batch = db.batch();
-    snap.docs.forEach((doc) => batch.delete(doc.ref));
-    await batch.commit();
-    deleted += snap.size;
+    for (const doc of snap.docs) {
+      if (collectionName === 'conversations') {
+        await deleteSubcollection(doc.ref, 'messages');
+      }
+      await doc.ref.delete();
+      deleted += 1;
+    }
     process.stdout.write(`Deleted ${deleted} from ${collectionName}\r`);
   }
   if (deleted > 0) console.log(`\nCleared ${collectionName}: ${deleted} documents`);
@@ -208,11 +237,29 @@ function buildUsers() {
       },
     });
   });
+  if (LINK_STUDENT_UID && !STUDENT_UIDS.includes(LINK_STUDENT_UID)) {
+    writes.push({
+      ref: db.collection('users').doc(LINK_STUDENT_UID),
+      data: {
+        uid: LINK_STUDENT_UID,
+        email: 'linked.student@findahome.demo',
+        fullName: 'Linked Student',
+        role: 'STUDENT',
+        isVerified: true,
+        phone: `+267 7${randInt(1000000, 9999999)}`,
+        verificationStatus: 'VERIFIED',
+        studentInstitution: 'University of Botswana',
+        studentPreferredLocation: 'Gaborone',
+        studentBudgetMax: 2000,
+      },
+    });
+  }
   return writes;
 }
 
 function buildProperties() {
   const writes = [];
+  const sampleProperties = [];
   const perProvider = Math.floor(PROPERTY_COUNT / PROVIDER_UIDS.length);
   let remainder = PROPERTY_COUNT % PROVIDER_UIDS.length;
   const assignments = [];
@@ -235,8 +282,18 @@ function buildProperties() {
     const location = pick(LOCATIONS);
     const priceBwp = Number(randInt(800, 3500));
     const roomCount = randInt(1, 4);
+    const ref = db.collection('properties').doc();
+    const imageUrls = uniqueImages(imageCount);
+    if (sampleProperties.length < 3) {
+      sampleProperties.push({
+        id: ref.id,
+        ownerId,
+        title,
+        imageUrls,
+      });
+    }
     writes.push({
-      ref: db.collection('properties').doc(),
+      ref,
       data: {
         ownerId,
         title,
@@ -247,30 +304,98 @@ function buildProperties() {
         availabilityDate: isRented
           ? new Date(createdAt).toISOString().slice(0, 10)
           : new Date().toISOString().slice(0, 10),
-        imageUrls: uniqueImages(imageCount),
+        imageUrls,
         description: `${title} in ${location}. ${roomCount} room(s), ideal for students. Contact provider for viewing.`,
         createdAt,
         updatedAt,
       },
     });
   }
-  return writes;
+  return { writes, sampleProperties };
+}
+
+async function seedSampleConversations(studentId, sampleProperties) {
+  if (!studentId || sampleProperties.length === 0) return;
+
+  console.log(`Linking sample inbox for student ${studentId}...`);
+  const templates = [
+    { fromStudent: true, text: 'Hi! Is this room still available for June?' },
+    { fromStudent: false, text: 'Yes — we can schedule a viewing this week.' },
+    { fromStudent: true, text: 'Perfect. Does the price include Wi-Fi?' },
+    { fromStudent: false, text: 'Wi-Fi is included. I will send the viewing times shortly.' },
+  ];
+
+  for (let i = 0; i < Math.min(2, sampleProperties.length); i++) {
+    const property = sampleProperties[i];
+    const participants = [studentId, property.ownerId].sort();
+    const convId = conversationId(property.id, studentId, property.ownerId);
+    const convRef = db.collection('conversations').doc(convId);
+    await convRef.set({
+      participants,
+      studentId,
+      providerId: property.ownerId,
+      studentName: 'Linked Student',
+      providerName: PROVIDERS.find((p) => p.uid === property.ownerId)?.fullName || 'Provider',
+      propertyId: property.id,
+      propertyTitle: property.title,
+      propertyImageUrl: property.imageUrls[0] || IMAGE_URLS[0],
+      lastMessage: templates[templates.length - 1].text,
+      lastUpdated: FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    for (let m = 0; m < templates.length; m++) {
+      const tpl = templates[m];
+      await convRef.collection('messages').add({
+        senderId: tpl.fromStudent ? studentId : property.ownerId,
+        message: tpl.text,
+        timestamp: FieldValue.serverTimestamp(),
+      });
+    }
+  }
+}
+
+async function printCounts() {
+  const [users, properties, conversations] = await Promise.all([
+    db.collection('users').count().get(),
+    db.collection('properties').count().get(),
+    db.collection('conversations').count().get(),
+  ]);
+  console.log('--- Firestore counts ---');
+  console.log(`users:         ${users.data().count}`);
+  console.log(`properties:    ${properties.data().count}`);
+  console.log(`conversations: ${conversations.data().count}`);
+  console.log('------------------------');
+  if (properties.data().count === 0) {
+    console.warn('WARNING: properties collection is empty — the app home screen will show no listings.');
+  }
 }
 
 async function main() {
   console.log('FindHome Firestore seed');
+  console.log(`Project: ${serviceAccount.project_id}`);
   if (RESET) {
-    console.log('Reset mode: deleting users and properties...');
+    console.log('Reset mode: deleting properties, users, conversations...');
+    await deleteCollection('conversations');
     await deleteCollection('properties');
     await deleteCollection('users');
   }
   const userWrites = buildUsers();
-  const propertyWrites = buildProperties();
+  const { writes: propertyWrites, sampleProperties } = buildProperties();
   console.log(`Seeding ${userWrites.length} users...`);
   await commitBatches(userWrites);
   console.log(`Seeding ${propertyWrites.length} properties...`);
   await commitBatches(propertyWrites);
+
+  const inboxStudent = LINK_STUDENT_UID || STUDENT_UIDS[0];
+  await seedSampleConversations(inboxStudent, sampleProperties);
+
+  await printCounts();
   console.log('Done.');
+  if (!LINK_STUDENT_UID) {
+    console.log('Tip: pass your Firebase Auth UID to get sample inbox threads:');
+    console.log('  node seed.js --reset --link-student=YOUR_AUTH_UID');
+  }
   process.exit(0);
 }
 

@@ -3,6 +3,7 @@ package com.example.nestore_15.ui
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -13,13 +14,17 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.nestore_15.R
 import com.example.nestore_15.data.repository.ChatRepository
 import com.example.nestore_15.data.session.SessionManager
+import com.google.android.material.button.MaterialButton
+import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class ConversationsActivity : AppCompatActivity() {
 
     private val sessionManager by lazy { SessionManager(applicationContext) }
     private val chatRepository = ChatRepository()
+    private var observeJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,7 +39,11 @@ class ConversationsActivity : AppCompatActivity() {
         }
 
         val recycler = findViewById<RecyclerView>(R.id.rvConversations)
-        val empty = findViewById<TextView>(R.id.tvConversationsEmpty)
+        val emptyScroll = findViewById<ScrollView>(R.id.conversationsEmptyScroll)
+        val errorText = findViewById<TextView>(R.id.tvConversationsError)
+        val browseButton = findViewById<MaterialButton>(R.id.btnBrowseHomes)
+        val refreshButton = findViewById<MaterialButton>(R.id.btnRefreshInbox)
+
         val adapter = ConversationAdapter(currentUserId) { conversation ->
             startActivity(
                 Intent(this, ChatActivity::class.java).apply {
@@ -50,20 +59,41 @@ class ConversationsActivity : AppCompatActivity() {
         recycler.layoutManager = LinearLayoutManager(this)
         recycler.adapter = adapter
 
-        lifecycleScope.launch {
+        browseButton.setOnClickListener { finish() }
+        refreshButton.setOnClickListener { startObserving(currentUserId, adapter, recycler, emptyScroll, errorText) }
+
+        startObserving(currentUserId, adapter, recycler, emptyScroll, errorText)
+    }
+
+    private fun startObserving(
+        currentUserId: String,
+        adapter: ConversationAdapter,
+        recycler: RecyclerView,
+        emptyScroll: ScrollView,
+        errorText: TextView
+    ) {
+        observeJob?.cancel()
+        errorText.visibility = View.GONE
+        observeJob = lifecycleScope.launch {
             runCatching {
                 chatRepository.observeConversations(currentUserId).collect { conversations ->
                     adapter.submit(conversations)
-                    empty.visibility = if (conversations.isEmpty()) View.VISIBLE else View.GONE
+                    val isEmpty = conversations.isEmpty()
+                    emptyScroll.visibility = if (isEmpty) View.VISIBLE else View.GONE
+                    recycler.visibility = if (isEmpty) View.GONE else View.VISIBLE
+                    errorText.visibility = View.GONE
                 }
             }.onFailure { err ->
                 if (err is CancellationException) return@onFailure
-                Toast.makeText(
-                    this@ConversationsActivity,
-                    err.message ?: "Could not load conversations",
-                    Toast.LENGTH_SHORT
-                ).show()
-                empty.visibility = View.VISIBLE
+                recycler.visibility = View.GONE
+                emptyScroll.visibility = View.GONE
+                errorText.visibility = View.VISIBLE
+                val message = when ((err.cause as? FirebaseFirestoreException)?.code) {
+                    FirebaseFirestoreException.Code.PERMISSION_DENIED ->
+                        getString(R.string.conversations_load_error)
+                    else -> err.message ?: getString(R.string.conversations_load_error)
+                }
+                errorText.text = message
             }
         }
     }
@@ -72,7 +102,6 @@ class ConversationsActivity : AppCompatActivity() {
         val toolbar = findViewById<Toolbar>(R.id.secondaryToolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setDisplayShowTitleEnabled(false)
         toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
 }

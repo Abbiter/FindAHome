@@ -20,4 +20,13 @@
     <string name="not_now">Not now</string>
     <string name="nav_welcome_named">Welcome, %1$s</string>
     <string name="nav_welcome_generic">Welcome</string>
+    <string name="conversations_title">Messages</string>
+    <string name="conversations_empty_title">Your inbox is ready</string>
+    <string name="conversations_empty_subtitle">When you message a host about a listing, the conversation will show up here.</string>
+    <string name="conversations_empty_tip_1">• Open any home and tap inquire or message the provider</string>
+    <string name="conversations_empty_tip_2">• Providers reply here — you will see the property photo and title</string>
+    <string name="conversations_empty_tip_3">• Pull down on Home to refresh after new listings are added</string>
+    <string name="conversations_empty_browse">Browse homes</string>
+    <string name="conversations_empty_refresh">Refresh inbox</string>
+    <string name="conversations_load_error">Could not load messages. Publish the latest Firestore rules and try again.</string>
 </resources>

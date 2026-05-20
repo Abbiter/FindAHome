@@ -100,7 +100,10 @@ fun HomeScreen(
             when (uiState) {
                 HomeUiState.Loading -> OverlayLoading(visible = true)
                 HomeUiState.Error -> {
-                    ListingsEmptyState(modifier = Modifier.align(Alignment.Center))
+                    ListingsEmptyState(
+                        modifier = Modifier.align(Alignment.Center),
+                        databaseEmpty = true
+                    )
                 }
                 is HomeUiState.Success -> {
                     if (uiState.listings.isEmpty()) {

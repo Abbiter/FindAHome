@@ -70,11 +70,19 @@ fun FavoritesEmptyState(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ListingsEmptyState(modifier: Modifier = Modifier) {
+fun ListingsEmptyState(
+    modifier: Modifier = Modifier,
+    databaseEmpty: Boolean = true
+) {
     EmptyState(
         icon = Icons.Outlined.SearchOff,
-        title = "No listings found",
-        message = "Try adjusting your location filter or check back soon for new homes.",
+        title = if (databaseEmpty) "No homes in the database yet" else "No listings match your search",
+        message = if (databaseEmpty) {
+            "Listings are loaded from Firestore. Run scripts/seed.js against project findahome-50b4d, " +
+                "publish firestore.rules, then sign in and reopen the app."
+        } else {
+            "Try adjusting your location filter or check back soon for new homes."
+        },
         modifier = modifier
     )
 }

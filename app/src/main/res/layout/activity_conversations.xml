@@ -11,23 +11,35 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/white"
-        app:navigationIcon="@drawable/ic_back_arrow" />
+        app:navigationIcon="@drawable/ic_back_arrow"
+        app:title="@string/conversations_title"
+        app:titleTextColor="@color/brand_primary_dark" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvConversations"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:padding="10dp" />
+        android:layout_weight="1">
 
-    <TextView
-        android:id="@+id/tvConversationsEmpty"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:padding="24dp"
-        android:text="No conversations yet"
-        android:textColor="@color/deep_royal_text"
-        android:textSize="14sp"
-        android:visibility="gone" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvConversations"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:padding="12dp" />
+
+        <include
+            android:id="@+id/conversationsEmpty"
+            layout="@layout/view_conversations_empty" />
+
+        <TextView
+            android:id="@+id/tvConversationsError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:padding="24dp"
+            android:textColor="@color/status_not_verified_red"
+            android:textSize="14sp"
+            android:visibility="gone" />
+    </FrameLayout>
 </LinearLayout>
