@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -46,10 +47,18 @@ fun SplashScreen(
     isNavigatingAway: Boolean,
     onExitAnimationFinished: () -> Unit,
     onRetry: () -> Unit,
+    onSplashContentReady: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val darkTheme = isSystemInDarkTheme()
     var taglineVisible by remember { mutableStateOf(false) }
+
+    // Dismiss the Android 12 system splash only after Compose has drawn animated content.
+    LaunchedEffect(Unit) {
+        withFrameMillis { }
+        withFrameMillis { }
+        onSplashContentReady()
+    }
 
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(SplashAnimationConfig.TAGLINE_DELAY_MS.toLong())

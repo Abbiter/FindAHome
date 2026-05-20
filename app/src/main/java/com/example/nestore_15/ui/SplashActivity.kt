@@ -13,6 +13,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.nestore_15.R
 import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.ui.screens.SplashScreen
@@ -20,13 +21,20 @@ import com.example.nestore_15.ui.theme.FindAHomeTheme
 import com.example.nestore_15.viewmodel.SplashDestination
 import com.example.nestore_15.viewmodel.SplashUiState
 import com.example.nestore_15.viewmodel.SplashViewModel
+import java.util.concurrent.atomic.AtomicBoolean
 
 class SplashActivity : ComponentActivity() {
 
     private val viewModel: SplashViewModel by viewModels()
     private var hasNavigatedAway = false
 
+    /** Compose aurora + logo are composed and at least one frame has been drawn. */
+    private val composeSplashReady = AtomicBoolean(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
+        splashScreen.setKeepOnScreenCondition { !composeSplashReady.get() }
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
@@ -58,6 +66,7 @@ class SplashActivity : ComponentActivity() {
                     isLoading = state is SplashUiState.Loading,
                     errorMessage = (state as? SplashUiState.ConnectivityIssue)?.message,
                     isNavigatingAway = pendingDestination != null && !exitAnimationFinished,
+                    onSplashContentReady = { composeSplashReady.set(true) },
                     onExitAnimationFinished = {
                         if (!exitAnimationFinished) {
                             exitAnimationFinished = true

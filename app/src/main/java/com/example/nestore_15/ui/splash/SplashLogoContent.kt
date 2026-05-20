@@ -16,11 +16,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,16 +42,14 @@ fun SplashLogoContent(
     modifier: Modifier = Modifier,
     widthFraction: Float = 0.72f
 ) {
-    var entranceStarted by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { entranceStarted = true }
-
+    // Entrance runs while the system splash is still visible (held), so the handoff is already animated.
     val entranceAlpha by animateFloatAsState(
-        targetValue = if (entranceStarted) 1f else 0f,
+        targetValue = 1f,
         animationSpec = tween(SplashAnimationConfig.LOGO_ENTRANCE_MS, easing = FastOutSlowInEasing),
         label = "logoEntranceAlpha"
     )
     val entranceScale by animateFloatAsState(
-        targetValue = if (entranceStarted) 1f else SplashAnimationConfig.LOGO_ENTRANCE_START_SCALE,
+        targetValue = 1f,
         animationSpec = tween(SplashAnimationConfig.LOGO_ENTRANCE_MS, easing = FastOutSlowInEasing),
         label = "logoEntranceScale"
     )
