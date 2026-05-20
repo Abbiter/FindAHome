@@ -1,6 +1,13 @@
 {
   "name": "findhome-seed",
   "private": true,
+  "scripts": {
+    "seed": "node seed.js",
+    "seed:reset": "node seed.js --reset",
+    "backfill-images": "node backfill-property-images.js",
+    "backfill-images:full": "node backfill-property-images.js --prune-legacy --upgrade-drawables",
+    "verify": "node verify.js"
+  },
   "dependencies": {
     "firebase-admin": "^12.7.0"
   }

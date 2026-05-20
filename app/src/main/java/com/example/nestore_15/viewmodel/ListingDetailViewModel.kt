@@ -10,6 +10,7 @@ import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.repository.PropertyRepository
 import com.example.nestore_15.data.repository.UserRepository
 import com.example.nestore_15.data.repository.toListing
+import com.example.nestore_15.data.util.LocalListingImages
 import com.example.nestore_15.ui.screens.ProviderProfileUi
 import com.example.nestore_15.ui.screens.toProviderProfileUi
 import com.example.nestore_15.ui.screens.ListingDetailsUi
@@ -89,7 +90,7 @@ class ListingDetailViewModel(
             description = description.ifBlank { "No description provided." },
             availabilityStatus = statusLabel,
             isReserved = availabilityStatus == PropertyStatus.RENTED,
-            imageUrls = imageUrls.ifEmpty { listOf("") },
+            imageUrls = imageUrls.ifEmpty { listOf(LocalListingImages.keyForListingId(id)) },
             ownerId = ownerId,
             reservedByCurrentUser = currentUserId != null && reservedBy == currentUserId,
             reservationRef = reservationRef,
@@ -109,7 +110,7 @@ class ListingDetailViewModel(
             description = "Student housing near campus. Contact the provider for more details.",
             availabilityStatus = statusLabel,
             isReserved = isReserved,
-            imageUrls = listOf(imageUrl).filter { it.isNotBlank() },
+            imageUrls = imageUrls.ifEmpty { listOf(imageUrl).filter { it.isNotBlank() } },
             ownerId = ownerId,
             reservedByCurrentUser = currentUserId != null && isReservedBy(currentUserId),
             reservationRef = reservationRef,

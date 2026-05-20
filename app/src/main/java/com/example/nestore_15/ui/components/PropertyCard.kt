@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.nestore_15.data.model.Listing
+import com.example.nestore_15.data.util.ListingImageResolver
 import com.example.nestore_15.ui.theme.CardShape
 import com.example.nestore_15.ui.theme.FindAHomeColors
 import com.example.nestore_15.ui.theme.ImageShape
@@ -45,6 +46,7 @@ fun PropertyCard(
         "P$formatted"
     }
 ) {
+    val imageRef = ListingImageResolver.displayRefForListing(listing)
     val statusLabel = if (listing.isReserved) "RENTED" else "AVAILABLE"
     val statusBg = if (listing.isReserved) {
         FindAHomeColors.PendingOrange.copy(alpha = 0.92f)
@@ -68,7 +70,8 @@ fun PropertyCard(
                     .aspectRatio(4f / 3f)
             ) {
                 ListingImage(
-                    imageRef = listing.imageUrl,
+                    imageRef = imageRef,
+                    listingId = listing.id,
                     contentDescription = listing.title,
                     modifier = Modifier
                         .fillMaxSize()

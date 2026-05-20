@@ -26,16 +26,37 @@ Copy `firestore.rules` from the repo root into [Firestore Rules](https://console
 
 Re-publish after every rules change (required for Messages / conversations queries).
 
-## 4. Verify
+## 4. Fix listing photos (without wiping data)
+
+If Home shows blank cards or only a few photos:
 
 ```powershell
-node verify.js
+npm run backfill-images:full
 ```
 
-Expect **properties: 350** (or similar).
+This will:
 
-## 5. App
+- Add Unsplash/Pexels `imageUrls` to any property missing photos
+- Replace drawable-only keys with real photo URLs (optional upgrade)
+- Remove the old `listings` collection so it does not duplicate `properties` on Home
+
+Lighter touch (only empty `imageUrls`):
+
+```powershell
+npm run backfill-images
+```
+
+## 5. Verify
+
+```powershell
+npm run verify
+```
+
+Expect **properties: 350** (or similar) and **missing photos: 0**.
+
+## 6. App
 
 - Sign in as a **student** (any Firebase Auth account).
 - Home reads the `properties` collection — not `listings`.
+- Rebuild/reinstall the app after script changes (needs `INTERNET` for remote photos).
 - Messages only appear for conversations where your UID is in `participants` (use `--link-student` or inquire on a listing).

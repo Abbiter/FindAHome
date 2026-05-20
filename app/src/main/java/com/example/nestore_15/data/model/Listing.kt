@@ -10,6 +10,8 @@ data class Listing(
     val availabilityDate: String,
     val depositAmount: Double,
     val imageUrl: String,
+    /** All image refs when sourced from a property document (`imageUrls` in Firestore). */
+    val imageUrls: List<String> = emptyList(),
     val ownerId: String,
     val isReserved: Boolean = false,
     val reservedBy: String = "",

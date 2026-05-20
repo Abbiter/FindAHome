@@ -7,6 +7,7 @@ import androidx.annotation.DrawableRes
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.example.nestore_15.R
+import com.example.nestore_15.data.model.Listing
 
 /**
  * Resolves listing/property image references from Firestore.
@@ -67,6 +68,20 @@ object ListingImageResolver {
     /** First non-blank entry from a property image list. */
     fun primaryFromList(imageUrls: List<String>?): String? =
         imageUrls?.firstOrNull { it.isNotBlank() }
+
+    /** Best ref for cards: remote/local from list, then single field, then catalog fallback. */
+    fun displayRefForListing(listing: Listing): String {
+        primaryFromList(listing.imageUrls)?.let { return it }
+        val single = listing.imageUrl.trim()
+        if (single.isNotEmpty()) return single
+        return LocalListingImages.keyForListingId(listing.id)
+    }
+
+    @DrawableRes
+    fun catalogPlaceholderForId(listingId: String): Int {
+        val key = LocalListingImages.keyForListingId(listingId)
+        return drawableAliases[key] ?: fallbackDrawable
+    }
 
     /**
      * Model object for Glide: [String] URL or [@DrawableRes] Int.

@@ -98,7 +98,7 @@ fun ListingDetailsScreen(
                         .weight(1f)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    GallerySection(detail.imageUrls, detail.title)
+                    GallerySection(detail.id, detail.imageUrls, detail.title)
                     Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
                         AvailabilityBadge(detail.availabilityStatus, detail.isReserved)
                         if (detail.reservedByCurrentUser) {
@@ -167,7 +167,7 @@ fun ListingDetailsScreen(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun GallerySection(imageUrls: List<String>, title: String) {
+private fun GallerySection(listingId: String, imageUrls: List<String>, title: String) {
     val images = imageUrls.filter { it.isNotBlank() }.ifEmpty { listOf("") }
     val pagerState = rememberPagerState(pageCount = { images.size.coerceAtLeast(1) })
     Box {
@@ -178,6 +178,7 @@ private fun GallerySection(imageUrls: List<String>, title: String) {
             ListingImage(
                 imageRef = images[page.coerceIn(images.indices)],
                 contentDescription = title,
+                listingId = listingId,
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(4f / 3f),
@@ -219,6 +220,7 @@ private fun GallerySection(imageUrls: List<String>, title: String) {
                     ListingImage(
                         imageRef = url,
                         contentDescription = null,
+                        listingId = listingId,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )

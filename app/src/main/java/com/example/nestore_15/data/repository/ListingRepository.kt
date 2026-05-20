@@ -2,6 +2,7 @@ package com.example.nestore_15.data.repository
 
 import android.net.Uri
 import com.example.nestore_15.data.model.Listing
+import com.example.nestore_15.data.util.ListingImageResolver
 import com.example.nestore_15.data.util.LocalListingImages
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -26,7 +27,7 @@ class ListingRepository(
             listingsFlow(firestore.collection("listings")),
             propertiesAsListingsFlow()
         ) { legacy, fromProperties ->
-            mergeListings(legacy, fromProperties)
+            mergeListings(legacy, fromProperties, propertiesPrimary = true)
         }
     }
 
@@ -104,7 +105,7 @@ class ListingRepository(
                     minAvailabilityDate = todayDateString()
                 )
             }
-            mergeListings(legacy, filteredProperties)
+            mergeListings(legacy, filteredProperties, propertiesPrimary = true)
         }
     }
 
@@ -122,11 +123,35 @@ class ListingRepository(
         awaitClose { registration.remove() }
     }
 
-    private fun mergeListings(legacy: List<Listing>, fromProperties: List<Listing>): List<Listing> {
+    private fun mergeListings(
+        legacy: List<Listing>,
+        fromProperties: List<Listing>,
+        propertiesPrimary: Boolean = false
+    ): List<Listing> {
+        if (propertiesPrimary && fromProperties.isNotEmpty()) {
+            return fromProperties.sortedByDescending { it.availabilityDate }
+        }
         val byId = LinkedHashMap<String, Listing>()
         legacy.forEach { byId[it.id] = it }
-        fromProperties.forEach { byId[it.id] = it }
+        fromProperties.forEach { existing ->
+            val prior = byId[existing.id]
+            byId[existing.id] = if (prior == null) {
+                existing
+            } else {
+                pickRicherListing(prior, existing)
+            }
+        }
         return byId.values.sortedByDescending { it.availabilityDate }
+    }
+
+    private fun pickRicherListing(a: Listing, b: Listing): Listing =
+        if (imageRichness(b) >= imageRichness(a)) b else a
+
+    private fun imageRichness(listing: Listing): Int {
+        val refs = if (listing.imageUrls.isNotEmpty()) listing.imageUrls else listOf(listing.imageUrl)
+        val remoteCount = refs.count { ListingImageResolver.isRemote(it) }
+        val localCount = refs.count { it.isNotBlank() && !ListingImageResolver.isRemote(it) }
+        return remoteCount * 3 + localCount + if (listing.isPropertyListing) 1 else 0
     }
 
     private fun passesClientFilters(

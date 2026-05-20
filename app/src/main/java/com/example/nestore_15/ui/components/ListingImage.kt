@@ -8,6 +8,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.nestore_15.data.util.ListingImageResolver
 
 /**
@@ -19,17 +20,26 @@ fun ListingImage(
     imageRef: String?,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    contentScale: ContentScale = ContentScale.Crop
+    contentScale: ContentScale = ContentScale.Crop,
+    listingId: String = ""
 ) {
     val context = LocalContext.current
     val resolved = remember(imageRef) { ListingImageResolver.resolve(context, imageRef) }
+    val placeholderRes = remember(listingId) {
+        ListingImageResolver.catalogPlaceholderForId(listingId)
+    }
     when (resolved) {
         is ListingImageResolver.ResolvedImage.Remote -> {
             AsyncImage(
-                model = resolved.url,
+                model = ImageRequest.Builder(context)
+                    .data(resolved.url)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = contentDescription,
                 modifier = modifier,
-                contentScale = contentScale
+                contentScale = contentScale,
+                placeholder = painterResource(placeholderRes),
+                error = painterResource(placeholderRes)
             )
         }
         is ListingImageResolver.ResolvedImage.Local -> {

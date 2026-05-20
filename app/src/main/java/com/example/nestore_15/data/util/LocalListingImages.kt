@@ -38,4 +38,11 @@ object LocalListingImages {
             propertyImageKeys[(startIndex + offset) % propertyImageKeys.size]
         }
     }
+
+    /** Stable catalog image when Firestore has no photo refs. */
+    fun keyForListingId(listingId: String): String {
+        if (listingId.isBlank()) return defaultPropertyImageKey
+        val index = listingId.hashCode().and(Int.MAX_VALUE) % propertyImageKeys.size
+        return propertyImageKeys[index]
+    }
 }

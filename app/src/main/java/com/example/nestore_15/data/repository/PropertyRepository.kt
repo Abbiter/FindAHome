@@ -6,6 +6,7 @@ import com.example.nestore_15.data.model.Property
 import com.example.nestore_15.data.model.PropertyStatus
 import com.google.firebase.firestore.DocumentSnapshot
 import com.example.nestore_15.data.util.LocalListingImages
+import com.example.nestore_15.data.util.parseImageUrlList
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.channels.awaitClose
@@ -30,7 +31,7 @@ internal fun DocumentSnapshot.toPropertyOrNull(): Property? {
         ?: 0
     val status = PropertyStatus.fromFirestore(getString("availabilityStatus"))
     val availabilityDate = getString("availabilityDate").orEmpty()
-    val urls = (get("imageUrls") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+    val urls = parseImageUrlList()
     val createdAt = getLong("createdAt")
     val updatedAt = getLong("updatedAt")
     val reservedBy = getString("reservedBy").orEmpty()
@@ -72,6 +73,7 @@ fun Property.toListing(): Listing {
         availabilityDate = dateForFilter,
         depositAmount = 0.0,
         imageUrl = imageUrls.firstOrNull().orEmpty(),
+        imageUrls = imageUrls,
         ownerId = ownerId,
         isReserved = isRented,
         reservedBy = reservedBy,
