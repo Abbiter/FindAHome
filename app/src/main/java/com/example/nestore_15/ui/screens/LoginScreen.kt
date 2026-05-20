@@ -57,6 +57,7 @@ fun LoginScreen(
         Spacer(Modifier.height(24.dp))
         BrandLogo(
             fillMaxWidthFraction = 0.65f,
+            squareAspect = true,
             modifier = Modifier.padding(horizontal = 24.dp)
         )
         Spacer(Modifier.height(20.dp))

@@ -2,17 +2,20 @@ package com.example.nestore_15.ui.screens
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,13 +28,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.nestore_15.R
-import com.example.nestore_15.ui.components.BrandLogo
 import com.example.nestore_15.ui.components.PrimaryOrangeButton
 import com.example.nestore_15.ui.theme.FindAHomeColors
 
@@ -51,44 +54,52 @@ fun SplashScreen(
         label = "splashAlpha"
     )
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(FindAHomeColors.PrimaryDarkBlue)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
     ) {
+        val bottomAccentHeight = 3.dp
+        val contentMaxHeight = maxHeight * 0.82f
+        val logoMaxHeight = maxHeight * 0.42f
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxWidth()
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(horizontal = 36.dp, vertical = 40.dp)
+                .heightIn(max = contentMaxHeight)
+                .padding(horizontal = 28.dp)
+                .padding(bottom = bottomAccentHeight + 8.dp)
                 .alpha(entranceAlpha)
         ) {
-            BrandLogo(
-                fillMaxWidthFraction = 0.62f,
+            Image(
+                painter = painterResource(R.drawable.splash_logo),
+                contentDescription = stringResource(R.string.app_name),
                 modifier = Modifier
-                    .graphicsLayer { clip = false }
-                    .padding(bottom = 8.dp)
+                    .fillMaxWidth(0.72f)
+                    .heightIn(max = logoMaxHeight),
+                contentScale = ContentScale.Fit
             )
             if (isLoading && errorMessage == null) {
                 CircularProgressIndicator(
                     modifier = Modifier
-                        .padding(top = 36.dp)
-                        .size(44.dp),
+                        .padding(top = 20.dp)
+                        .size(40.dp),
                     color = FindAHomeColors.OrangeAccent,
                     strokeWidth = 4.dp
                 )
             }
-            Spacer(Modifier.height(28.dp))
             Text(
                 text = stringResource(R.string.splash_tagline),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
                 color = FindAHomeColors.TextOnPrimary,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
             )
         }
 
@@ -96,8 +107,7 @@ fun SplashScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .height(3.dp)
-                .navigationBarsPadding()
+                .height(bottomAccentHeight)
                 .background(FindAHomeColors.OrangeAccent)
         )
 
@@ -105,8 +115,9 @@ fun SplashScreen(
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(horizontal = 32.dp, vertical = 48.dp)
-                    .navigationBarsPadding(),
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp, vertical = 24.dp)
+                    .padding(bottom = bottomAccentHeight + 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(

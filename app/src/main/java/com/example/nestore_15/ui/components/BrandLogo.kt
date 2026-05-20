@@ -18,13 +18,15 @@ fun BrandLogo(
     height: Dp = Dp.Unspecified,
     width: Dp = Dp.Unspecified,
     fillMaxWidthFraction: Float? = null,
+    squareAspect: Boolean = false,
     contentDescription: String = "Find A Home"
 ) {
     var imageModifier = modifier
     if (fillMaxWidthFraction != null) {
-        imageModifier = imageModifier
-            .fillMaxWidth(fillMaxWidthFraction)
-            .aspectRatio(1f)
+        imageModifier = imageModifier.fillMaxWidth(fillMaxWidthFraction)
+        if (squareAspect) {
+            imageModifier = imageModifier.aspectRatio(1f)
+        }
     }
     if (height != Dp.Unspecified) {
         imageModifier = imageModifier.height(height)

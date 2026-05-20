@@ -65,6 +65,7 @@ fun RegisterScreen(
     ) {
         BrandLogo(
             fillMaxWidthFraction = 0.55f,
+            squareAspect = true,
             modifier = Modifier.padding(bottom = 12.dp, start = 24.dp, end = 24.dp)
         )
         Text(
