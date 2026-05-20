@@ -1,6 +1,7 @@
 package com.example.nestore_15.data.preferences
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -19,6 +20,7 @@ class AppNotificationStore(private val context: Context) {
 
     private val notificationsKey = stringPreferencesKey("notifications_json")
     private val dedupKeysKey = stringPreferencesKey("notification_dedup_keys")
+    private val floodCleanupKey = booleanPreferencesKey("listing_flood_cleaned_v1")
 
     fun notificationsForUser(userId: String): Flow<List<AppNotification>> =
         notificationsFlow.map { list ->
@@ -38,10 +40,6 @@ class AppNotificationStore(private val context: Context) {
         return keys[userId]?.contains(dedupKey) == true
     }
 
-    /**
-     * Adds a notification only if [dedupKey] was not seen for this user.
-     * Prevents the same alert from reappearing after app restart or "Clear all".
-     */
     suspend fun addOnce(
         userId: String,
         dedupKey: String,
@@ -52,8 +50,41 @@ class AppNotificationStore(private val context: Context) {
     ): Boolean {
         if (userId.isBlank() || dedupKey.isBlank()) return false
         if (hasDedupKey(userId, dedupKey)) return false
-        add(userId, title, message, type, subtitle)
+        add(userId, title, message, type, subtitle, dedupKey)
         recordDedupKey(userId, dedupKey)
+        return true
+    }
+
+    /**
+     * One-time cleanup for the listing-match flood (seed data + restart without filters).
+     * Returns true if cleanup ran this call.
+     */
+    suspend fun cleanupListingNotificationFlood(userId: String): Boolean {
+        if (userId.isBlank()) return false
+        val prefs = context.notificationDataStore.data.first()
+        if (prefs[floodCleanupKey] == true) return false
+
+        context.notificationDataStore.edit { editPrefs ->
+            val current = decode(editPrefs[notificationsKey].orEmpty())
+            val removing = current.filter {
+                it.userId == userId && it.type == NotificationType.LISTING_MATCH
+            }
+            val keys = loadDedupKeys(editPrefs[dedupKeysKey].orEmpty()).toMutableMap()
+            val userKeys = keys.getOrPut(userId) { mutableSetOf() }.toMutableSet()
+            removing.forEach { n ->
+                val key = n.dedupKey.ifBlank { dedupKeyFor(n) }
+                userKeys.add(key)
+                if (n.type == NotificationType.LISTING_MATCH) {
+                    listingIdFromDedupKey(key)?.let { userKeys.add("listing:$it") }
+                }
+            }
+            keys[userId] = userKeys
+            editPrefs[dedupKeysKey] = encodeDedupKeys(keys)
+            editPrefs[notificationsKey] = encode(
+                current.filter { it.userId != userId || it.type != NotificationType.LISTING_MATCH }
+            )
+            editPrefs[floodCleanupKey] = true
+        }
         return true
     }
 
@@ -64,7 +95,11 @@ class AppNotificationStore(private val context: Context) {
             val removing = current.filter { it.userId == userId }
             val keys = loadDedupKeys(prefs[dedupKeysKey].orEmpty()).toMutableMap()
             val userKeys = keys.getOrPut(userId) { mutableSetOf() }.toMutableSet()
-            removing.forEach { userKeys.add(dedupKeyFor(it)) }
+            removing.forEach { n ->
+                val key = n.dedupKey.ifBlank { dedupKeyFor(n) }
+                userKeys.add(key)
+                listingIdFromDedupKey(key)?.let { userKeys.add("listing:$it") }
+            }
             keys[userId] = userKeys
             prefs[dedupKeysKey] = encodeDedupKeys(keys)
             prefs[notificationsKey] = encode(current.filter { it.userId != userId })
@@ -76,7 +111,8 @@ class AppNotificationStore(private val context: Context) {
         title: String,
         message: String,
         type: NotificationType = NotificationType.GENERAL,
-        subtitle: String = ""
+        subtitle: String = "",
+        dedupKey: String = ""
     ) {
         if (userId.isBlank()) return
         context.notificationDataStore.edit { prefs ->
@@ -90,7 +126,8 @@ class AppNotificationStore(private val context: Context) {
                     message = message,
                     timestamp = System.currentTimeMillis(),
                     type = type,
-                    subtitle = subtitle
+                    subtitle = subtitle,
+                    dedupKey = dedupKey
                 )
             )
             prefs[notificationsKey] = encode(current.take(80))
@@ -134,9 +171,13 @@ class AppNotificationStore(private val context: Context) {
         return root.toString()
     }
 
-    /** Stable key so cleared items are not recreated on restart. */
     fun dedupKeyFor(notification: AppNotification): String =
-        "${notification.type.name}|${notification.title}|${notification.subtitle}|${notification.message}"
+        notification.dedupKey.ifBlank {
+            "${notification.type.name}|${notification.title}|${notification.subtitle}|${notification.message}"
+        }
+
+    private fun listingIdFromDedupKey(key: String): String? =
+        if (key.startsWith("listing:")) key.removePrefix("listing:") else null
 
     private fun encode(list: List<AppNotification>): String {
         val arr = JSONArray()
@@ -150,6 +191,7 @@ class AppNotificationStore(private val context: Context) {
                     .put("subtitle", n.subtitle)
                     .put("timestamp", n.timestamp)
                     .put("type", n.type.name)
+                    .put("dedupKey", n.dedupKey)
             )
         }
         return arr.toString()
@@ -162,17 +204,20 @@ class AppNotificationStore(private val context: Context) {
             buildList {
                 for (i in 0 until arr.length()) {
                     val o = arr.getJSONObject(i)
+                    val userId = o.optString("userId")
+                    if (userId.isBlank()) continue
                     add(
                         AppNotification(
                             id = o.optString("id"),
-                            userId = o.optString("userId"),
+                            userId = userId,
                             title = o.optString("title"),
                             message = o.optString("message"),
                             subtitle = o.optString("subtitle"),
                             timestamp = o.optLong("timestamp"),
                             type = runCatching {
                                 NotificationType.valueOf(o.optString("type"))
-                            }.getOrDefault(NotificationType.GENERAL)
+                            }.getOrDefault(NotificationType.GENERAL),
+                            dedupKey = o.optString("dedupKey")
                         )
                     )
                 }

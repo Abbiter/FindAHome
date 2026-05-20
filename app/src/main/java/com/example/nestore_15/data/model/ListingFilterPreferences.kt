@@ -4,4 +4,8 @@ data class ListingFilterPreferences(
     val minPriceBwp: Double? = null,
     val maxPriceBwp: Double? = null,
     val location: String? = null
-)
+) {
+    /** True when the student has set at least one browse filter. */
+    fun hasActiveFilters(): Boolean =
+        minPriceBwp != null || maxPriceBwp != null || !location.isNullOrBlank()
+}

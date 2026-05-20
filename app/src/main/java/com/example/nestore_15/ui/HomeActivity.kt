@@ -29,6 +29,7 @@ import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.model.VerificationStatus
 import com.example.nestore_15.data.preferences.AppNotificationStore
 import com.example.nestore_15.data.preferences.ListingFilterPreferencesStore
+import com.example.nestore_15.data.preferences.ListingSeenStore
 import com.example.nestore_15.data.preferences.SavedListingsStore
 import com.example.nestore_15.data.repository.ChatRepository
 import com.example.nestore_15.data.repository.ListingRepository
@@ -66,13 +67,15 @@ class HomeActivity : ComponentActivity() {
     private val listingRepository by lazy { ListingRepository() }
     private val savedListingsStore by lazy { SavedListingsStore(applicationContext) }
     private val notificationStore by lazy { AppNotificationStore(applicationContext) }
+    private val listingSeenStore by lazy { ListingSeenStore(applicationContext) }
     private val listingMatchNotifier by lazy {
         ListingMatchNotifier(
             context = applicationContext,
             sessionManager = sessionManager,
             listingRepository = listingRepository,
             filterStore = filterStore,
-            notificationStore = notificationStore
+            notificationStore = notificationStore,
+            listingSeenStore = listingSeenStore
         )
     }
 
@@ -114,6 +117,16 @@ class HomeActivity : ComponentActivity() {
     }
 
     private fun initializeStudentUi() {
+        lifecycleScope.launch {
+            val userId = sessionManager.getCurrentUserId().orEmpty()
+            if (userId.isNotBlank()) {
+                if (notificationStore.cleanupListingNotificationFlood(userId)) {
+                    val browsable = listingRepository.getBrowsableListings().first()
+                    listingSeenStore.markSeededWithIds(userId, browsable.map { it.id })
+                }
+            }
+        }
+
         setContent {
             val navController = rememberNavController()
             val homeState by viewModel.uiState.observeAsState(HomeUiState.Loading)

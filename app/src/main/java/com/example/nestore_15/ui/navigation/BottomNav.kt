@@ -1,7 +1,6 @@
 package com.example.nestore_15.ui.navigation
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,11 +14,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
@@ -33,10 +32,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.nestore_15.ui.theme.BottomNavShape
 import com.example.nestore_15.ui.theme.FindAHomeColors
@@ -52,14 +50,13 @@ private data class NavItem(
     val tab: StudentTab,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
-    val useGreenWhenSelected: Boolean = false,
-    val labelOverride: String? = null
+    val useGreenWhenSelected: Boolean = false
 )
 
 private val studentNavItems = listOf(
     NavItem(StudentTab.HOME, Icons.Filled.Home, Icons.Outlined.Home),
-    NavItem(StudentTab.FAVORITES, Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder, useGreenWhenSelected = true, labelOverride = "My Homes"),
-    NavItem(StudentTab.MESSAGES, Icons.Filled.Chat, Icons.Outlined.Chat),
+    NavItem(StudentTab.FAVORITES, Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder, useGreenWhenSelected = true),
+    NavItem(StudentTab.MESSAGES, Icons.AutoMirrored.Filled.Chat, Icons.AutoMirrored.Outlined.Chat),
     NavItem(StudentTab.PROFILE, Icons.Filled.Person, Icons.Outlined.Person, useGreenWhenSelected = true)
 )
 
@@ -73,15 +70,15 @@ fun FloatingBottomNavBar(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 12.dp)
-            .shadow(12.dp, BottomNavShape),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         shape = BottomNavShape,
-        color = FindAHomeColors.PrimaryDarkBlue
+        color = FindAHomeColors.PrimaryDarkBlue,
+        shadowElevation = 12.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 10.dp),
+                .padding(horizontal = 4.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             studentNavItems.forEach { item ->
@@ -112,11 +109,6 @@ private fun NavBarItem(
         animationSpec = tween(250),
         label = "navTint"
     )
-    val scale by animateFloatAsState(
-        targetValue = if (selected) 1.08f else 1f,
-        animationSpec = tween(250),
-        label = "navScale"
-    )
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
@@ -124,7 +116,6 @@ private fun NavBarItem(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .scale(scale)
                 .clip(CircleShape)
                 .background(if (selected) tint.copy(alpha = 0.18f) else Color.Transparent)
                 .clickable(
@@ -132,7 +123,7 @@ private fun NavBarItem(
                     indication = null,
                     onClick = onClick
                 )
-                .padding(horizontal = 14.dp, vertical = 8.dp)
+                .padding(horizontal = 6.dp, vertical = 8.dp)
         ) {
             Icon(
                 imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
@@ -142,9 +133,11 @@ private fun NavBarItem(
             )
             if (selected) {
                 Text(
-                    item.labelOverride ?: item.tab.label,
+                    text = item.tab.label,
                     style = MaterialTheme.typography.labelSmall,
                     color = tint,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 2.dp)
                 )
             }

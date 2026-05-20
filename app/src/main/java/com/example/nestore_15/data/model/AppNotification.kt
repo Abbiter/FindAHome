@@ -7,7 +7,9 @@ data class AppNotification(
     val message: String,
     val timestamp: Long,
     val type: NotificationType = NotificationType.GENERAL,
-    val subtitle: String = ""
+    val subtitle: String = "",
+    /** Stable id used to prevent duplicates after clear / restart. */
+    val dedupKey: String = ""
 )
 
 enum class NotificationType {
