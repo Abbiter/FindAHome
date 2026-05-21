@@ -6,6 +6,7 @@
     "seed:reset": "node seed.js --reset",
     "backfill-images": "node backfill-property-images.js",
     "backfill-images:full": "node backfill-property-images.js --prune-legacy --upgrade-drawables",
+    "backfill-images:housing": "node backfill-property-images.js --force-all",
     "verify": "node verify.js"
   },
   "dependencies": {

@@ -4,6 +4,7 @@
  *   node backfill-property-images.js
  *   node backfill-property-images.js --prune-legacy
  *   node backfill-property-images.js --upgrade-drawables   (replace drawable keys with URLs)
+ *   node backfill-property-images.js --force-all             (rewrite every property imageUrls)
  */
 const admin = require('firebase-admin');
 const {
@@ -28,6 +29,7 @@ admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 const db = admin.firestore();
 const PRUNE_LEGACY = process.argv.includes('--prune-legacy');
 const UPGRADE_DRAWABLES = process.argv.includes('--upgrade-drawables');
+const FORCE_ALL = process.argv.includes('--force-all');
 const BATCH_SIZE = 400;
 
 function onlyDrawableKeys(imageUrls) {
@@ -60,6 +62,7 @@ async function backfillProperties() {
     const data = doc.data();
     const imageUrls = Array.isArray(data.imageUrls) ? data.imageUrls : [];
     const needsPhotos =
+      FORCE_ALL ||
       !hasUsableImages(imageUrls) ||
       (UPGRADE_DRAWABLES && onlyDrawableKeys(imageUrls)) ||
       (!hasRemoteImages(imageUrls) && UPGRADE_DRAWABLES);
@@ -127,6 +130,7 @@ async function sampleProperty() {
 async function main() {
   console.log('FindHome — backfill property images');
   console.log(`Project: ${serviceAccount.project_id}`);
+  if (FORCE_ALL) console.log('Mode: replace ALL property photos with housing-only URLs');
   if (UPGRADE_DRAWABLES) console.log('Mode: upgrade drawable keys → remote URLs');
   if (PRUNE_LEGACY) console.log('Mode: delete legacy listings collection after backfill');
 
