@@ -18,7 +18,7 @@ object ListingImageResolver {
     private const val TAG = "ListingImageResolver"
 
     @DrawableRes
-    val fallbackDrawable: Int = R.drawable.listing_placeholder_property
+    val fallbackDrawable: Int = R.drawable.ic_listing_placeholder
 
     sealed class ResolvedImage {
         data class Remote(val url: String) : ResolvedImage()
