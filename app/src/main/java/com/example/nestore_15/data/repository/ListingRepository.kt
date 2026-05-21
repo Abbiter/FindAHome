@@ -120,8 +120,10 @@ class ListingRepository(
                     return@addSnapshotListener
                 }
                 val list = snapshot?.documents.orEmpty()
-                    .mapNotNull { it.toPropertyOrNull()?.toListing() }
-                trySend(list).isSuccess
+                    .mapNotNull { doc ->
+                        runCatching { doc.toPropertyOrNull()?.toListing() }.getOrNull()
+                    }
+                trySend(sanitizeListings(list)).isSuccess
             }
         awaitClose { registration.remove() }
     }

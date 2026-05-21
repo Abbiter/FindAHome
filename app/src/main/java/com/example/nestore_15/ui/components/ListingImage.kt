@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import coil.size.Scale
 import com.example.nestore_15.data.util.ListingImageResolver
 
 /**
@@ -34,6 +35,8 @@ fun ListingImage(
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(resolved.url)
+                    .size(480, 360)
+                    .scale(Scale.FILL)
                     .crossfade(true)
                     .build(),
                 contentDescription = contentDescription,

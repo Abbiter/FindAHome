@@ -51,7 +51,11 @@ class LoginActivity : ComponentActivity() {
                         UserRole.STUDENT -> HomeActivity::class.java
                         UserRole.PROVIDER -> ProviderHomeActivity::class.java
                     }
-                    startActivity(Intent(this, destination))
+                    startActivity(
+                        Intent(this, destination).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        }
+                    )
                     finish()
                 }
                 is LoginUiState.Error -> {
