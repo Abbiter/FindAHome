@@ -38,9 +38,10 @@ fun FindAHomeTheme(
     content: @Composable () -> Unit
 ) {
     val view = LocalView.current
-    if (!view.isInEditMode) {
+    val activity = view.context as? Activity
+    if (!view.isInEditMode && activity != null) {
         SideEffect {
-            val window = (view.context as Activity).window
+            val window = activity.window
             window.statusBarColor = FindAHomeColors.PrimaryDarkBlue.toArgb()
             window.navigationBarColor = FindAHomeColors.BackgroundSoft.toArgb()
             WindowCompat.getInsetsController(window, view).apply {

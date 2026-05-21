@@ -28,6 +28,7 @@ fun ListingImage(
     val placeholderRes = remember(listingId) {
         ListingImageResolver.catalogPlaceholderForId(listingId)
     }
+    val placeholderPainter = painterResource(placeholderRes)
     when (resolved) {
         is ListingImageResolver.ResolvedImage.Remote -> {
             AsyncImage(
@@ -38,8 +39,8 @@ fun ListingImage(
                 contentDescription = contentDescription,
                 modifier = modifier,
                 contentScale = contentScale,
-                placeholder = painterResource(placeholderRes),
-                error = painterResource(placeholderRes)
+                placeholder = placeholderPainter,
+                error = placeholderPainter
             )
         }
         is ListingImageResolver.ResolvedImage.Local -> {

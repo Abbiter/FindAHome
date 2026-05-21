@@ -113,7 +113,7 @@ class ListingRepository(
         val registration: ListenerRegistration = firestore.collection("properties")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    close(error)
+                    trySend(emptyList()).isSuccess
                     return@addSnapshotListener
                 }
                 val list = snapshot?.documents.orEmpty()

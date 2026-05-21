@@ -14,6 +14,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.example.nestore_15.data.model.Listing
+import com.example.nestore_15.data.model.ListingFilterPreferences
 import com.example.nestore_15.data.model.UserRole
 import com.example.nestore_15.data.model.VerificationStatus
 import com.example.nestore_15.data.preferences.AppNotificationStore
@@ -35,6 +37,7 @@ import com.example.nestore_15.data.repository.ChatRepository
 import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.notifications.ListingMatchNotifier
+import com.example.nestore_15.ui.components.FullScreenLoading
 import com.example.nestore_15.ui.screens.ListingDetailsUi
 import com.example.nestore_15.ui.screens.MainScreen
 import com.example.nestore_15.ui.theme.FindAHomeColors
@@ -83,10 +86,30 @@ class HomeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        val showStudentUi = mutableStateOf(false)
+
+        setContent {
+            if (!showStudentUi.value) {
+                FindAHomeTheme {
+                    FullScreenLoading("Loading…")
+                }
+            } else {
+                StudentHomeContent()
+            }
+        }
+
         lifecycleScope.launch {
+            val uid = sessionManager.getCurrentUserId()
+            if (uid.isNullOrBlank()) {
+                goToLogin()
+                return@launch
+            }
+
             val roleFromIntent = intent.getStringExtra(RegisterActivity.EXTRA_ROLE_OVERRIDE)
                 ?.let { runCatching { UserRole.valueOf(it) }.getOrNull() }
-            val role = sessionManager.userRole.first() ?: roleFromIntent
+            val user = sessionManager.awaitCurrentUser()
+            val role = user?.role ?: roleFromIntent
+
             when (role) {
                 UserRole.PROVIDER -> {
                     startActivity(
@@ -97,95 +120,10 @@ class HomeActivity : ComponentActivity() {
                     finish()
                     return@launch
                 }
-                UserRole.STUDENT -> Unit
-                null -> {
-                    if (sessionManager.getCurrentUserId() != null) {
-                        initializeStudentUi()
-                        return@launch
-                    }
-                    startActivity(
-                        Intent(this@HomeActivity, LoginActivity::class.java).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                        }
-                    )
-                    finish()
-                    return@launch
+                UserRole.STUDENT, null -> {
+                    showStudentUi.value = true
+                    onStudentUiReady(uid)
                 }
-            }
-            initializeStudentUi()
-        }
-    }
-
-    private fun initializeStudentUi() {
-        lifecycleScope.launch {
-            val userId = sessionManager.getCurrentUserId().orEmpty()
-            if (userId.isNotBlank()) {
-                if (notificationStore.cleanupListingNotificationFlood(userId)) {
-                    val browsable = listingRepository.getBrowsableListings().first()
-                    listingSeenStore.markSeededWithIds(userId, browsable.map { it.id })
-                }
-            }
-        }
-
-        setContent {
-            val navController = rememberNavController()
-            val homeState by viewModel.uiState.observeAsState(HomeUiState.Loading)
-            val profileState by profileViewModel.uiState.observeAsState(ProfileUiState.Loading)
-            val filterPrefs by filterStore.preferencesFlow.collectAsStateWithLifecycle(
-                initialValue = com.example.nestore_15.data.model.ListingFilterPreferences()
-            )
-            val currentUser by sessionManager.getCurrentUser().collectAsStateWithLifecycle(initialValue = null)
-            var searchQuery by remember { mutableStateOf(filterPrefs.location.orEmpty()) }
-
-            val verificationColor = when (currentUser?.effectiveVerificationStatus()) {
-                VerificationStatus.VERIFIED -> FindAHomeColors.VerifiedGreen
-                VerificationStatus.PENDING_REVIEW -> FindAHomeColors.PendingOrange
-                VerificationStatus.NOT_SUBMITTED, null -> FindAHomeColors.NeutralDot
-            }
-
-            FindAHomeTheme {
-                MainScreen(
-                    navController = navController,
-                    homeUiState = homeState ?: HomeUiState.Loading,
-                    profileUiState = profileState ?: ProfileUiState.Loading,
-                    searchQuery = searchQuery,
-                    onSearchChange = { query ->
-                        searchQuery = query
-                        viewModel.setSearchQuery(query)
-                    },
-                    filterPreferences = filterPrefs,
-                    onApplyFilters = { min, max, location ->
-                        lifecycleScope.launch {
-                            filterStore.saveFilters(min, max, location)
-                            searchQuery = location.orEmpty()
-                            viewModel.setSearchQuery(location.orEmpty())
-                        }
-                    },
-                    verificationDotColor = verificationColor,
-                    onNotifications = { openNotifications() },
-                    onProfileHeader = {
-                        startActivity(Intent(this@HomeActivity, ProfileActivity::class.java))
-                    },
-                    onMapFab = {
-                        Toast.makeText(this@HomeActivity, "Map view coming soon", Toast.LENGTH_SHORT).show()
-                    },
-                    onOpenMessages = {
-                        startActivity(Intent(this@HomeActivity, ConversationsActivity::class.java))
-                    },
-                    onEditProfile = {
-                        startActivity(Intent(this@HomeActivity, EditProfileActivity::class.java))
-                    },
-                    onVerify = {
-                        startActivity(Intent(this@HomeActivity, VerificationActivity::class.java))
-                    },
-                    onLogout = { confirmLogout() },
-                    onChangePassword = { sendPasswordReset(profileState) },
-                    currentUserId = sessionManager.getCurrentUserId(),
-                    onContactProvider = ::contactProvider,
-                    onToggleFavorite = ::toggleFavorite,
-                    savedListingsStore = savedListingsStore,
-                    notificationStore = notificationStore
-                )
             }
         }
 
@@ -197,8 +135,90 @@ class HomeActivity : ComponentActivity() {
                 }
             }
         )
+    }
 
+    private fun goToLogin() {
+        startActivity(
+            Intent(this, LoginActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+        )
+        finish()
+    }
+
+    private fun onStudentUiReady(userId: String) {
+        lifecycleScope.launch {
+            runCatching {
+                if (notificationStore.cleanupListingNotificationFlood(userId)) {
+                    val browsable = listingRepository.getBrowsableListings().first()
+                    listingSeenStore.markSeededWithIds(userId, browsable.map { it.id })
+                }
+            }
+        }
         listingMatchNotifier.start(lifecycleScope)
+    }
+
+    @Composable
+    private fun StudentHomeContent() {
+        val navController = rememberNavController()
+        val homeState by viewModel.uiState.observeAsState(HomeUiState.Loading)
+        val profileState by profileViewModel.uiState.observeAsState(ProfileUiState.Loading)
+        val filterPrefs by filterStore.preferencesFlow.collectAsStateWithLifecycle(
+            initialValue = ListingFilterPreferences()
+        )
+        val currentUser by sessionManager.getCurrentUser().collectAsStateWithLifecycle(initialValue = null)
+        var searchQuery by remember { mutableStateOf(filterPrefs.location.orEmpty()) }
+
+        val verificationColor = when (currentUser?.effectiveVerificationStatus()) {
+            VerificationStatus.VERIFIED -> FindAHomeColors.VerifiedGreen
+            VerificationStatus.PENDING_REVIEW -> FindAHomeColors.PendingOrange
+            VerificationStatus.NOT_SUBMITTED, null -> FindAHomeColors.NeutralDot
+        }
+
+        FindAHomeTheme {
+            MainScreen(
+                navController = navController,
+                homeUiState = homeState ?: HomeUiState.Loading,
+                profileUiState = profileState ?: ProfileUiState.Loading,
+                searchQuery = searchQuery,
+                onSearchChange = { query ->
+                    searchQuery = query
+                    viewModel.setSearchQuery(query)
+                },
+                filterPreferences = filterPrefs,
+                onApplyFilters = { min, max, location ->
+                    lifecycleScope.launch {
+                        filterStore.saveFilters(min, max, location)
+                        searchQuery = location.orEmpty()
+                        viewModel.setSearchQuery(location.orEmpty())
+                    }
+                },
+                verificationDotColor = verificationColor,
+                onNotifications = { openNotifications() },
+                onProfileHeader = {
+                    startActivity(Intent(this@HomeActivity, ProfileActivity::class.java))
+                },
+                onMapFab = {
+                    Toast.makeText(this@HomeActivity, "Map view coming soon", Toast.LENGTH_SHORT).show()
+                },
+                onOpenMessages = {
+                    startActivity(Intent(this@HomeActivity, ConversationsActivity::class.java))
+                },
+                onEditProfile = {
+                    startActivity(Intent(this@HomeActivity, EditProfileActivity::class.java))
+                },
+                onVerify = {
+                    startActivity(Intent(this@HomeActivity, VerificationActivity::class.java))
+                },
+                onLogout = { confirmLogout() },
+                onChangePassword = { sendPasswordReset(profileState) },
+                currentUserId = sessionManager.getCurrentUserId(),
+                onContactProvider = ::contactProvider,
+                onToggleFavorite = ::toggleFavorite,
+                savedListingsStore = savedListingsStore,
+                notificationStore = notificationStore
+            )
+        }
     }
 
     private fun openNotifications() {

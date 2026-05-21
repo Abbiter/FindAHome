@@ -1,7 +1,10 @@
 package com.example.nestore_15.notifications
 
 import android.content.Context
+import com.example.nestore_15.data.model.Listing
+import com.example.nestore_15.data.model.ListingFilterPreferences
 import com.example.nestore_15.data.model.NotificationType
+import com.example.nestore_15.data.model.User
 import com.example.nestore_15.data.preferences.AppNotificationStore
 import com.example.nestore_15.data.preferences.ListingFilterPreferencesStore
 import com.example.nestore_15.data.preferences.ListingSeenStore
@@ -33,48 +36,60 @@ class ListingMatchNotifier(
 
     fun start(scope: CoroutineScope) {
         scope.launch {
-            combine(
-                sessionManager.getCurrentUser(),
-                filterStore.preferencesFlow,
-                listingRepository.getBrowsableListings()
-            ) { user, filters, listings ->
-                Triple(user, filters, listings)
+            runCatching {
+                combine(
+                    sessionManager.getCurrentUser(),
+                    filterStore.preferencesFlow,
+                    listingRepository.getBrowsableListings()
+                ) { user, filters, listings ->
+                    Triple(user, filters, listings)
+                }
+                    .distinctUntilChanged { a, b ->
+                        a.first?.id == b.first?.id &&
+                            a.second == b.second &&
+                            a.third.map { it.id } == b.third.map { it.id }
+                    }
+                    .collectLatest { (user, filters, listings) ->
+                        handleListingsUpdate(user, filters, listings)
+                    }
             }
-                .distinctUntilChanged { a, b ->
-                    a.first?.id == b.first?.id &&
-                        a.second == b.second &&
-                        a.third.map { it.id } == b.third.map { it.id }
-                }
-                .collectLatest { (user, filters, listings) ->
-                    val userId = user?.id.orEmpty()
-                    if (userId.isBlank()) return@collectLatest
+        }
+    }
 
-                    val ids = listings.map { it.id }.toSet()
+    private suspend fun handleListingsUpdate(
+        user: User?,
+        filters: ListingFilterPreferences,
+        listings: List<Listing>
+    ) {
+        runCatching {
+            val userId = user?.id.orEmpty()
+            if (userId.isBlank()) return
 
-                    if (!listingSeenStore.isSeeded(userId)) {
-                        listingSeenStore.markSeededWithIds(userId, ids)
-                        return@collectLatest
-                    }
+            val ids = listings.map { it.id }.toSet()
 
-                    if (!filters.hasActiveFilters()) return@collectLatest
+            if (!listingSeenStore.isSeeded(userId)) {
+                listingSeenStore.markSeededWithIds(userId, ids)
+                return
+            }
 
-                    val seen = listingSeenStore.getSeenIds(userId)
-                    val newListings = listings.filter { it.id !in seen }
-                    if (newListings.isEmpty()) return@collectLatest
+            if (!filters.hasActiveFilters()) return
 
-                    listingSeenStore.addSeenIds(userId, newListings.map { it.id })
+            val seen = listingSeenStore.getSeenIds(userId)
+            val newListings = listings.filter { it.id !in seen }
+            if (newListings.isEmpty()) return
 
-                    newListings.forEach { listing ->
-                        notificationHelper.notifyUser(
-                            userId = userId,
-                            dedupKey = "listing:${listing.id}",
-                            title = "New matching listing",
-                            message = "${listing.title} in ${listing.location}",
-                            type = NotificationType.LISTING_MATCH,
-                            subtitle = "Matches your saved filters"
-                        )
-                    }
-                }
+            listingSeenStore.addSeenIds(userId, newListings.map { it.id })
+
+            newListings.forEach { listing ->
+                notificationHelper.notifyUser(
+                    userId = userId,
+                    dedupKey = "listing:${listing.id}",
+                    title = "New matching listing",
+                    message = "${listing.title} in ${listing.location}",
+                    type = NotificationType.LISTING_MATCH,
+                    subtitle = "Matches your saved filters"
+                )
+            }
         }
     }
 }
