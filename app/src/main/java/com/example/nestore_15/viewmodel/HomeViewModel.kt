@@ -73,7 +73,7 @@ class HomeViewModel(
                         locationQuery = query
                     )
                 }.collectLatest { filtered ->
-                    _uiState.value = HomeUiState.Success(filtered)
+                    _uiState.postValue(HomeUiState.Success(filtered.distinctBy { it.id }))
                 }
             }.onFailure {
                 _uiState.value = HomeUiState.Error

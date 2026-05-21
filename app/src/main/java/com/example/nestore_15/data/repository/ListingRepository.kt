@@ -10,6 +10,7 @@ import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
@@ -33,7 +34,9 @@ class ListingRepository(
 
     /** Listings open for new reservations (excludes rented / reserved). */
     fun getBrowsableListings(): Flow<List<Listing>> =
-        getAllListings().map { listings -> listings.filter { !it.isReserved } }
+        getAllListings()
+            .map { listings -> sanitizeListings(listings.filter { !it.isReserved }) }
+            .catch { emit(emptyList()) }
 
     fun observeReservedByUser(userId: String): Flow<List<Listing>> = combine(
         reservedLegacyListingsFlow(userId),
@@ -309,4 +312,8 @@ class ListingRepository(
     private fun todayDateString(): String {
         return SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
     }
+
+    /** Stable unique ids — duplicate keys crash Compose lazy grids. */
+    private fun sanitizeListings(listings: List<Listing>): List<Listing> =
+        listings.distinctBy { it.id }
 }

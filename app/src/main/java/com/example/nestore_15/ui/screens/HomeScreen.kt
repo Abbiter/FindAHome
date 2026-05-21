@@ -36,7 +36,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.nestore_15.data.model.Listing
 import com.example.nestore_15.data.model.ListingFilterPreferences
-import com.example.nestore_15.ui.animation.listItemAnimation
 import com.example.nestore_15.ui.components.FindAHomeTopAppBar
 import com.example.nestore_15.ui.components.HeaderActionRow
 import com.example.nestore_15.ui.components.ListingsEmptyState
@@ -142,13 +141,15 @@ fun HomeScreen(
                             verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            itemsIndexed(uiState.listings, key = { _, it -> it.id }) { index, listing ->
+                            items(
+                                items = uiState.listings,
+                                key = { it.id }
+                            ) { listing ->
                                 PropertyCard(
                                     listing = listing,
                                     onClick = { onListingClick(listing) },
                                     isFavorite = savedListingIds.contains(listing.id),
-                                    onToggleFavorite = { onToggleFavorite(listing) },
-                                    modifier = Modifier.listItemAnimation(index)
+                                    onToggleFavorite = { onToggleFavorite(listing) }
                                 )
                             }
                         }
