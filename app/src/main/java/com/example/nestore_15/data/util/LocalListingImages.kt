@@ -1,48 +1,26 @@
 package com.example.nestore_15.data.util
 
 /**
- * Drawable keys stored in Firestore instead of Firebase Storage URLs.
- * Must match [ListingImageResolver] aliases or drawable resource names.
+ * Default property photos when gallery picks are not uploaded to Storage.
+ * Stores remote housing URLs in Firestore — not splash-screen drawable keys.
  */
 object LocalListingImages {
 
+    @Deprecated("Legacy drawable key; migrated to remote housing URL at read time")
     const val KEY_INTERIOR = "listing_interior"
+
+    @Deprecated("Legacy drawable key; migrated to remote housing URL at read time")
     const val KEY_MOVING = "listing_moving"
+
+    @Deprecated("Legacy drawable key; migrated to remote housing URL at read time")
     const val KEY_LIFESTYLE = "listing_lifestyle"
 
-    val propertyImageKeys: List<String> = listOf(
-        KEY_INTERIOR,
-        KEY_MOVING,
-        KEY_LIFESTYLE
-    )
+    fun urlsForNewProperty(pickedImageCount: Int): List<String> =
+        DefaultPropertyImageUrls.urlsForNewProperty(pickedImageCount)
 
-    val defaultPropertyImageKey: String = KEY_INTERIOR
+    fun urlsForAdditionalImages(additionalCount: Int, startIndex: Int): List<String> =
+        DefaultPropertyImageUrls.urlsForAdditionalImages(additionalCount, startIndex)
 
-    /**
-     * Assigns drawable keys for a property save. Picked gallery URIs are not uploaded;
-     * each selection maps to the next catalog key (assignment-friendly).
-     */
-    fun keysForNewProperty(pickedImageCount: Int): List<String> {
-        if (pickedImageCount <= 0) {
-            return listOf(defaultPropertyImageKey)
-        }
-        return List(pickedImageCount) { index ->
-            propertyImageKeys[index % propertyImageKeys.size]
-        }
-    }
-
-    /** Additional keys when editing and user picks more photos. */
-    fun keysForAdditionalImages(additionalCount: Int, startIndex: Int): List<String> {
-        if (additionalCount <= 0) return emptyList()
-        return List(additionalCount) { offset ->
-            propertyImageKeys[(startIndex + offset) % propertyImageKeys.size]
-        }
-    }
-
-    /** Stable catalog image when Firestore has no photo refs. */
-    fun keyForListingId(listingId: String): String {
-        if (listingId.isBlank()) return defaultPropertyImageKey
-        val index = listingId.hashCode().and(Int.MAX_VALUE) % propertyImageKeys.size
-        return propertyImageKeys[index]
-    }
+    fun urlForListingId(listingId: String): String =
+        DefaultPropertyImageUrls.urlForListingId(listingId)
 }

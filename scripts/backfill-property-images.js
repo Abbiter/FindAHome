@@ -37,6 +37,11 @@ function onlyDrawableKeys(imageUrls) {
   return imageUrls.every((u) => DRAWABLE_KEYS.includes(String(u).trim()));
 }
 
+function hasLegacyDrawableKeys(imageUrls) {
+  if (!hasUsableImages(imageUrls)) return false;
+  return imageUrls.some((u) => DRAWABLE_KEYS.includes(String(u).trim()));
+}
+
 async function deleteCollection(collectionName) {
   const col = db.collection(collectionName);
   let deleted = 0;
@@ -64,6 +69,7 @@ async function backfillProperties() {
     const needsPhotos =
       FORCE_ALL ||
       !hasUsableImages(imageUrls) ||
+      hasLegacyDrawableKeys(imageUrls) ||
       (UPGRADE_DRAWABLES && onlyDrawableKeys(imageUrls)) ||
       (!hasRemoteImages(imageUrls) && UPGRADE_DRAWABLES);
 

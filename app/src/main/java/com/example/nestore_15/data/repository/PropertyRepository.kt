@@ -5,6 +5,7 @@ import com.example.nestore_15.data.model.Listing
 import com.example.nestore_15.data.model.Property
 import com.example.nestore_15.data.model.PropertyStatus
 import com.google.firebase.firestore.DocumentSnapshot
+import com.example.nestore_15.data.util.DefaultPropertyImageUrls
 import com.example.nestore_15.data.util.LocalListingImages
 import com.example.nestore_15.data.util.parseImageUrlList
 import com.google.firebase.firestore.FirebaseFirestore
@@ -31,7 +32,13 @@ internal fun DocumentSnapshot.toPropertyOrNull(): Property? {
         ?: 0
     val status = PropertyStatus.fromFirestore(getString("availabilityStatus"))
     val availabilityDate = getString("availabilityDate").orEmpty()
-    val urls = parseImageUrlList()
+    val urls = parseImageUrlList().map { ref ->
+        if (DefaultPropertyImageUrls.isLegacyDrawableKey(ref)) {
+            DefaultPropertyImageUrls.urlForLegacyKey(ref)
+        } else {
+            ref
+        }
+    }
     val createdAt = getLong("createdAt")
     val updatedAt = getLong("updatedAt")
     val reservedBy = getString("reservedBy").orEmpty()
@@ -147,7 +154,7 @@ class PropertyRepository(
         imageUris: List<Uri>
     ): String {
         val docId = firestore.collection("properties").document().id
-        val imageUrls = LocalListingImages.keysForNewProperty(imageUris.size)
+        val imageUrls = LocalListingImages.urlsForNewProperty(imageUris.size)
         val now = System.currentTimeMillis()
         val payload = hashMapOf(
             "ownerId" to ownerId,
@@ -179,11 +186,18 @@ class PropertyRepository(
         existingImageUrls: List<String>,
         newImageUris: List<Uri>
     ) {
-        val newUrls = LocalListingImages.keysForAdditionalImages(
+        val sanitizedExisting = existingImageUrls.map { ref ->
+            if (DefaultPropertyImageUrls.isLegacyDrawableKey(ref)) {
+                DefaultPropertyImageUrls.urlForLegacyKey(ref)
+            } else {
+                ref
+            }
+        }
+        val newUrls = LocalListingImages.urlsForAdditionalImages(
             additionalCount = newImageUris.size,
-            startIndex = existingImageUrls.size
+            startIndex = sanitizedExisting.size
         )
-        val mergedUrls = existingImageUrls + newUrls
+        val mergedUrls = sanitizedExisting + newUrls
         val now = System.currentTimeMillis()
         val payload = hashMapOf(
             "ownerId" to ownerId,

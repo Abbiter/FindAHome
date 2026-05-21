@@ -53,7 +53,14 @@ const IMAGE_URLS = [
   'https://images.pexels.com/photos/5824482/pexels-photo-5824482.jpeg?auto=compress&cs=tinysrgb&w=800',
 ];
 
-const DRAWABLE_KEYS = ['listing_interior', 'listing_moving', 'listing_lifestyle'];
+const DRAWABLE_KEYS = [
+  'listing_interior',
+  'listing_moving',
+  'listing_lifestyle',
+  'splash_collage_interior',
+  'splash_collage_moving',
+  'splash_collage_lifestyle',
+];
 
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;

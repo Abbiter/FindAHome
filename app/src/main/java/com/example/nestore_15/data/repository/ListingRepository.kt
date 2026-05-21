@@ -246,7 +246,7 @@ class ListingRepository(
     suspend fun createListing(
         listing: Listing,
         imageUri: Uri? = null,
-        imageDrawableKey: String = LocalListingImages.defaultPropertyImageKey
+        imageUrl: String = LocalListingImages.urlForListingId("legacy")
     ): String {
         val listingId = if (listing.id.isBlank()) {
             firestore.collection("listings").document().id
@@ -254,7 +254,7 @@ class ListingRepository(
             listing.id
         }
 
-        val imageUrl = imageDrawableKey.ifBlank { LocalListingImages.defaultPropertyImageKey }
+        val resolvedImageUrl = imageUrl.ifBlank { LocalListingImages.urlForListingId("legacy") }
 
         val payload = hashMapOf(
             "title" to listing.title,
@@ -264,7 +264,7 @@ class ListingRepository(
             "amenities" to listing.amenities,
             "availabilityDate" to listing.availabilityDate,
             "depositAmount" to listing.depositAmount,
-            "imageUrl" to imageUrl,
+            "imageUrl" to resolvedImageUrl,
             "isReserved" to listing.isReserved,
             "ownerId" to listing.ownerId
         )

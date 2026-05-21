@@ -10,6 +10,7 @@ import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.repository.PropertyRepository
 import com.example.nestore_15.data.repository.UserRepository
 import com.example.nestore_15.data.repository.toListing
+import com.example.nestore_15.data.util.DefaultPropertyImageUrls
 import com.example.nestore_15.data.util.LocalListingImages
 import com.example.nestore_15.ui.screens.ProviderProfileUi
 import com.example.nestore_15.ui.screens.toProviderProfileUi
@@ -90,7 +91,15 @@ class ListingDetailViewModel(
             description = description.ifBlank { "No description provided." },
             availabilityStatus = statusLabel,
             isReserved = availabilityStatus == PropertyStatus.RENTED,
-            imageUrls = imageUrls.ifEmpty { listOf(LocalListingImages.keyForListingId(id)) },
+            imageUrls = imageUrls
+                .map { ref ->
+                    if (DefaultPropertyImageUrls.isLegacyDrawableKey(ref)) {
+                        DefaultPropertyImageUrls.urlForLegacyKey(ref)
+                    } else {
+                        ref
+                    }
+                }
+                .ifEmpty { listOf(LocalListingImages.urlForListingId(id)) },
             ownerId = ownerId,
             reservedByCurrentUser = currentUserId != null && reservedBy == currentUserId,
             reservationRef = reservationRef,
