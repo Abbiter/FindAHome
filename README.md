@@ -1,6 +1,6 @@
 # FindAHome
 
-Android app for **student housing near the University of Botswana (Gaborone)**. Students browse listings, save favorites, reserve rooms, chat with providers, and get local notifications when new matches appear. Property owners (providers) manage listings and reply to inquiries.
+Android app for **student housing in Gaborone**. Students browse listings, save favorites, reserve rooms, chat with providers, and get local notifications when new matches appear. Property owners (providers) manage listings and reply to inquiries.
 
 **Repository:** [https://github.com/Abbiter/FindAHome](https://github.com/Abbiter/FindAHome)
 
@@ -154,7 +154,7 @@ Reservation flow sets `availabilityStatus: "RENTED"`, `reservedBy`, and `reserva
 
 ## Course / presentation notes (CSE201-style)
 
-- **Purpose:** Help UB students find and book student accommodation in Gaborone.
+- **Purpose:** Help students find and book student accommodation in Gaborone.
 - **Design:** MVVM, role-based navigation (student vs provider), Firestore security rules for chat and reservations.
 - **Data:** 350 seeded properties, 3 providers + 2 students in seed script.
 - **Tests:** Manual UI checklist above; instrumented tests under `app/src/androidTest` if present.
@@ -165,4 +165,7 @@ Academic / project submission — see course requirements. Third-party images ma
 
 ## Authors
 
-FindAHome — University of Botswana student housing project.
+**Larona Olefile Mothame**  
+Botswana School of Business Sciences (BSBS)
+
+*FindAHome* — student housing mobile application project.
