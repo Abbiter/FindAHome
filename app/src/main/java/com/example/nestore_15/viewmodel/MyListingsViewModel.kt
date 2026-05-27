@@ -32,9 +32,11 @@ class MyListingsViewModel(
             combine(
                 listingRepository.getAllListings(),
                 listingRepository.observeReservedByUser(userId),
-                savedListingsStore.savedIdsFlow
+                savedListingsStore.savedIdsFlow(userId)
             ) { all, reserved, savedIds ->
-                val saved = all.filter { savedIds.contains(it.id) }
+                val saved = all.filter {
+                    savedIds.contains(it.id) && (it.reservedBy.isBlank() || it.reservedBy == userId)
+                }
                 MyListingsUiState(
                     saved = saved,
                     reserved = reserved,

@@ -12,6 +12,7 @@ import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.repository.PropertyRepository
 import com.example.nestore_15.data.repository.UserRepository
 import com.example.nestore_15.data.repository.toListing
+import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.notifications.AppNotificationHelper
 import com.example.nestore_15.notifications.ChatMessageNotifier
 import com.example.nestore_15.ui.screens.PaymentSummaryUi
@@ -172,6 +173,7 @@ class PaymentViewModel(
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     val helper = AppNotificationHelper(appContext)
+                    val sessionManager = SessionManager(appContext)
                     return PaymentViewModel(
                         listingId = listingId,
                         propertyRepository = PropertyRepository(),
@@ -182,6 +184,7 @@ class PaymentViewModel(
                         chatMessageNotifier = ChatMessageNotifier(
                             ChatRepository(),
                             UserRepository(),
+                            sessionManager,
                             helper
                         )
                     ) as T

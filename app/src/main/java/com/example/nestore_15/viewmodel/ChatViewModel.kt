@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.nestore_15.data.model.ChatMessage
 import com.example.nestore_15.data.repository.ChatRepository
 import com.example.nestore_15.data.repository.UserRepository
+import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.notifications.AppNotificationHelper
 import com.example.nestore_15.notifications.ChatMessageNotifier
 import com.example.nestore_15.ui.screens.toProviderProfileUi
@@ -101,6 +102,7 @@ class ChatViewModel(
     companion object {
         fun factory(appContext: Context): ViewModelProvider.Factory {
             val helper = AppNotificationHelper(appContext)
+            val sessionManager = SessionManager(appContext)
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -110,6 +112,7 @@ class ChatViewModel(
                         chatMessageNotifier = ChatMessageNotifier(
                             ChatRepository(),
                             UserRepository(),
+                            sessionManager,
                             helper
                         )
                     ) as T

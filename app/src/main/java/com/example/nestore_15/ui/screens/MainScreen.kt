@@ -24,6 +24,7 @@ import com.example.nestore_15.ui.navigation.StudentTab
 import com.example.nestore_15.viewmodel.HomeUiState
 import com.example.nestore_15.viewmodel.MyListingsViewModel
 import com.example.nestore_15.viewmodel.ProfileUiState
+import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun MainScreen(
@@ -51,7 +52,12 @@ fun MainScreen(
     modifier: Modifier = Modifier
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(StudentTab.HOME) }
-    val savedIds by savedListingsStore.savedIdsFlow.collectAsState(initial = emptySet())
+    val savedIdsFlow = if (currentUserId.isNullOrBlank()) {
+        flowOf(emptySet())
+    } else {
+        savedListingsStore.savedIdsFlow(currentUserId)
+    }
+    val savedIds by savedIdsFlow.collectAsState(initial = emptySet())
 
     Scaffold(
         modifier = modifier.fillMaxSize(),

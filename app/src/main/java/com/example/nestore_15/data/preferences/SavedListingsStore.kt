@@ -12,14 +12,18 @@ private val Context.savedListingsDataStore by preferencesDataStore(name = "saved
 
 class SavedListingsStore(private val context: Context) {
 
-    private val key = stringSetPreferencesKey("saved_listing_ids")
+    private fun keyFor(userId: String) = stringSetPreferencesKey("saved_listing_ids_$userId")
 
-    val savedIdsFlow: Flow<Set<String>> =
-        context.savedListingsDataStore.data.map { prefs -> prefs[key] ?: emptySet() }
+    fun savedIdsFlow(userId: String): Flow<Set<String>> =
+        context.savedListingsDataStore.data.map { prefs ->
+            if (userId.isBlank()) emptySet() else prefs[keyFor(userId)] ?: emptySet()
+        }
 
-    suspend fun toggleSaved(listingId: String): Boolean {
+    suspend fun toggleSaved(userId: String, listingId: String): Boolean {
+        if (userId.isBlank()) return false
         var nowSaved = false
         context.savedListingsDataStore.edit { prefs ->
+            val key = keyFor(userId)
             val current = prefs[key]?.toMutableSet() ?: mutableSetOf()
             nowSaved = if (current.contains(listingId)) {
                 current.remove(listingId)
@@ -33,6 +37,6 @@ class SavedListingsStore(private val context: Context) {
         return nowSaved
     }
 
-    suspend fun isSaved(listingId: String): Boolean =
-        savedIdsFlow.first().contains(listingId)
+    suspend fun isSaved(userId: String, listingId: String): Boolean =
+        savedIdsFlow(userId).first().contains(listingId)
 }

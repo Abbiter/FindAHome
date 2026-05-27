@@ -223,8 +223,13 @@ class HomeActivity : ComponentActivity() {
     }
 
     private fun toggleFavorite(listing: Listing) {
+        val userId = sessionManager.getCurrentUserId()
+        if (userId.isNullOrBlank()) {
+            Toast.makeText(this@HomeActivity, "Please log in to save homes", Toast.LENGTH_SHORT).show()
+            return
+        }
         lifecycleScope.launch {
-            val saved = savedListingsStore.toggleSaved(listing.id)
+            val saved = savedListingsStore.toggleSaved(userId, listing.id)
             Toast.makeText(
                 this@HomeActivity,
                 if (saved) "Saved to My Homes" else "Removed from saved",
