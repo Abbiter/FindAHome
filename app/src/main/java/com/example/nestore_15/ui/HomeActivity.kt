@@ -35,6 +35,7 @@ import com.example.nestore_15.data.repository.ChatRepository
 import com.example.nestore_15.data.repository.ListingRepository
 import com.example.nestore_15.data.session.SessionManager
 import com.example.nestore_15.notifications.ListingMatchNotifier
+import com.example.nestore_15.notifications.ChatInboxNotifier
 import com.example.nestore_15.ui.screens.ListingDetailsUi
 import com.example.nestore_15.ui.screens.MainScreen
 import com.example.nestore_15.ui.theme.FindAHomeColors
@@ -76,6 +77,12 @@ class HomeActivity : ComponentActivity() {
             filterStore = filterStore,
             notificationStore = notificationStore,
             listingSeenStore = listingSeenStore
+        )
+    }
+    private val chatInboxNotifier by lazy {
+        ChatInboxNotifier(
+            context = applicationContext,
+            sessionManager = sessionManager
         )
     }
 
@@ -136,6 +143,7 @@ class HomeActivity : ComponentActivity() {
         }
         delay(2_000)
         listingMatchNotifier.start(lifecycleScope)
+        chatInboxNotifier.start(lifecycleScope)
     }
 
     private fun goToLogin() {

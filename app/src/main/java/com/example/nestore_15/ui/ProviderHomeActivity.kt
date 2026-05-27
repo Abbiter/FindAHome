@@ -27,6 +27,7 @@ import com.example.nestore_15.ui.theme.FindAHomeTheme
 import com.example.nestore_15.data.repository.PropertyRepository
 import com.example.nestore_15.data.repository.UserRepository
 import com.example.nestore_15.notifications.AppNotificationHelper
+import com.example.nestore_15.notifications.ChatInboxNotifier
 import com.example.nestore_15.notifications.ProviderReservationNotifier
 import com.example.nestore_15.viewmodel.ProviderDashboardUiState
 import com.example.nestore_15.viewmodel.ProviderDashboardViewModel
@@ -63,6 +64,12 @@ class ProviderHomeActivity : ComponentActivity() {
             PropertyRepository(),
             UserRepository(),
             AppNotificationHelper(applicationContext)
+        )
+    }
+    private val chatInboxNotifier by lazy {
+        ChatInboxNotifier(
+            context = applicationContext,
+            sessionManager = sessionManager
         )
     }
 
@@ -103,6 +110,7 @@ class ProviderHomeActivity : ComponentActivity() {
         if (!ownerId.isNullOrBlank()) {
             viewModel.loadDashboard(ownerId)
             reservationNotifier.start(lifecycleScope, ownerId)
+            chatInboxNotifier.start(lifecycleScope)
         }
         maybeRequestNotificationPermission()
 
